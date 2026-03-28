@@ -101,3 +101,16 @@ npm test
 ```bash
 npm run format
 ```
+
+## CI/CD
+
+このリポジトリでは GitHub Actions を利用しています。
+
+- **CI** (`.github/workflows/ci.yml`)
+  - `main` への push と pull request で実行されます。
+  - Node.js 20 / 22 で `lint`、`format:check`、`build`、`test` を検証します。
+- **Release** (`.github/workflows/release.yml`)
+  - `v1.2.3` のようなタグ push をトリガーに実行されます。
+  - 品質チェックを再実行したうえで npm へ publish します。
+
+npm publish を有効化するには、リポジトリの Secrets に `NPM_TOKEN` を設定してください。

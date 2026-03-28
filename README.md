@@ -101,3 +101,16 @@ To apply formatting changes:
 ```bash
 npm run format
 ```
+
+## CI/CD
+
+This repository uses GitHub Actions.
+
+- **CI** (`.github/workflows/ci.yml`)
+  - Runs on pushes to `main` and pull requests.
+  - Verifies `lint`, `format:check`, `build`, and `test` on Node.js 20 and 22.
+- **Release** (`.github/workflows/release.yml`)
+  - Runs when a tag like `v1.2.3` is pushed.
+  - Re-runs quality checks and publishes to npm.
+
+To enable npm publishing, set `NPM_TOKEN` in repository secrets.
