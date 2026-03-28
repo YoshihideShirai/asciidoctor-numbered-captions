@@ -55,16 +55,25 @@ jobs:
           cache: npm
 
       - name: Pack plugin
-        run: npm pack
+        id: pack
+        run: |
+          set -euo pipefail
+          TARBALL=$(npm pack --json | node -e "const fs = require('node:fs'); const data = JSON.parse(fs.readFileSync(0, 'utf8')); process.stdout.write(data[0].filename)")
+          echo "tarball=${TARBALL}" >> "$GITHUB_OUTPUT"
 
       - name: Install packed plugin in a clean project
         run: |
-          mkdir -p /tmp/npm-install-check
-          cd /tmp/npm-install-check
+          set -euo pipefail
+          WORKDIR=$(mktemp -d)
+          cd "$WORKDIR"
           npm init -y
-          npm install "$GITHUB_WORKSPACE"/asciidoctor-numbered-captions-*.tgz
+          npm install "$GITHUB_WORKSPACE/${{ steps.pack.outputs.tarball }}"
 
       - name: Verify plugin can be required
         run: |
-          cd /tmp/npm-install-check
+          set -euo pipefail
+          WORKDIR=$(mktemp -d)
+          cd "$WORKDIR"
+          npm init -y
+          npm install "$GITHUB_WORKSPACE/${{ steps.pack.outputs.tarball }}"
           node -e "const plugin = require('asciidoctor-numbered-captions'); if (typeof plugin.register !== 'function') { throw new Error('register export not found') }"
