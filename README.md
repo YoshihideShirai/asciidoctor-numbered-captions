@@ -111,6 +111,6 @@ This repository uses GitHub Actions.
   - Verifies `lint`, `format:check`, `build`, and `test` on Node.js 20 and 22.
 - **Release** (`.github/workflows/release.yml`)
   - Runs when a tag like `v1.2.3` is pushed.
-  - Re-runs quality checks and publishes to npm.
+  - Re-runs quality checks and creates a GitHub Release.
 
-To enable npm publishing, set `NPM_TOKEN` in repository secrets.
+The release uploads the `npm pack` tarball as a release asset.

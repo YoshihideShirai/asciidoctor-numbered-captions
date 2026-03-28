@@ -111,6 +111,6 @@ npm run format
   - Node.js 20 / 22 で `lint`、`format:check`、`build`、`test` を検証します。
 - **Release** (`.github/workflows/release.yml`)
   - `v1.2.3` のようなタグ push をトリガーに実行されます。
-  - 品質チェックを再実行したうえで npm へ publish します。
+  - 品質チェックを再実行したうえで GitHub Release を作成します。
 
-npm publish を有効化するには、リポジトリの Secrets に `NPM_TOKEN` を設定してください。
+リリースには `npm pack` で生成した tarball をアセットとして添付します。

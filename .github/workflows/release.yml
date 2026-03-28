@@ -9,7 +9,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout
@@ -20,7 +20,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -31,7 +30,16 @@ jobs:
           npm run format:check
           npm test
 
-      - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Pack package
+        id: pack
+        run: |
+          set -euo pipefail
+          npm pack
+          TARBALL=$(node -e "const pkg = require('./package.json'); const safeName = pkg.name.startsWith('@') ? pkg.name.slice(1).replace('/', '-') : pkg.name; process.stdout.write(safeName + '-' + pkg.version + '.tgz')")
+          echo "tarball=${TARBALL}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: ${{ steps.pack.outputs.tarball }}
