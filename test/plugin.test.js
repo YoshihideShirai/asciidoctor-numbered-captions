@@ -20,8 +20,27 @@ function convertWithPlugin(source, options = {}) {
   })
 }
 
-test('numbers image/table/equation captions as chapter-counter', () => {
+test('keeps Asciidoctor default numbering when no plugin config is provided', () => {
   const input = `= Sample
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.doesNotMatch(html, /Figure 1-1\./)
+})
+
+test('numbers image/table/equation captions as chapter-counter from header attributes', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 1
+:numbered-captions-label-image: Figure
+:numbered-captions-label-table: Table
+:numbered-captions-label-stem: Equation
 
 == Chapter One
 
@@ -64,30 +83,6 @@ F = ma
   assert.match(html, /Figure 2-1\./)
   assert.match(html, /Table 2-1\./)
   assert.match(html, /Equation 2-1\./)
-})
-
-test('resets counters per chapter and per block type', () => {
-  const input = `= Sample
-
-== Chapter One
-
-.First Figure
-image::one.png[]
-
-.Second Figure
-image::two.png[]
-
-== Chapter Two
-
-.Third Figure
-image::three.png[]
-`
-
-  const html = convertWithPlugin(input)
-
-  assert.match(html, /Figure 1-1\./)
-  assert.match(html, /Figure 1-2\./)
-  assert.match(html, /Figure 2-1\./)
 })
 
 test('supports Asciidoc header attributes when options are not provided', () => {

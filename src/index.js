@@ -27,9 +27,34 @@ function firstDefined(...values) {
   return values.find((value) => value !== undefined && value !== null)
 }
 
+function hasAnyHeaderAttribute(document) {
+  return [
+    ATTRIBUTE_NAMES.chapterLevel,
+    ATTRIBUTE_NAMES.labels.image,
+    ATTRIBUTE_NAMES.labels.table,
+    ATTRIBUTE_NAMES.labels.stem
+  ].some((name) => document.getAttribute(name) !== undefined)
+}
+
+function hasAnyOptions(options) {
+  return (
+    options.chapterLevel !== undefined ||
+    options.labels?.image !== undefined ||
+    options.labels?.table !== undefined ||
+    options.labels?.stem !== undefined
+  )
+}
+
 function register(registry, options = {}) {
   registry.postprocessor(function () {
     this.process(function (_document, output) {
+      const pluginEnabled =
+        hasAnyOptions(options) || hasAnyHeaderAttribute(_document)
+
+      if (!pluginEnabled) {
+        return output
+      }
+
       const chapterLevel = toValidChapterLevel(
         firstDefined(
           options.chapterLevel,
@@ -142,7 +167,5 @@ function register(registry, options = {}) {
 
 module.exports = {
   register,
-  DEFAULT_LABELS,
-  ATTRIBUTE_NAMES,
-  toValidChapterLevel
+  DEFAULT_LABELS
 }

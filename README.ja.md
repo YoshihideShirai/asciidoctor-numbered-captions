@@ -62,6 +62,8 @@ image::sample.png[]
 
 優先順位: `register(registry, options)` > Asciidocヘッダー属性 > デフォルト値。
 
+デフォルトではこの拡張は無効のままで、Asciidoctor標準のナンバリングが使われます。Asciidocヘッダー属性またはJS optionsを指定した場合にのみ、この拡張の挙動が有効になります。
+
 - `chapterLevel` (default: `1`)
   - どのセクションレベルをチャプターとして扱うか。
 - `labels`

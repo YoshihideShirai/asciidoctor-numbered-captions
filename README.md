@@ -62,6 +62,8 @@ Header attribute example (Asciidoc):
 
 Priority: `register(registry, options)` > Asciidoc header attributes > defaults.
 
+By default, this extension stays inactive and Asciidoctor standard numbering is used. The extension behavior is enabled when either header attributes or JS options are provided.
+
 - `chapterLevel` (default: `1`)
   - Section level treated as chapter.
 - `labels`
