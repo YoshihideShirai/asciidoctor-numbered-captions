@@ -5,7 +5,10 @@
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [
     "asciidoctor",
@@ -18,5 +21,11 @@
   "license": "MIT",
   "dependencies": {
     "asciidoctor": "^3.0.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
+    "prettier": "^3.8.1"
   }
 }

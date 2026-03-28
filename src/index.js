@@ -6,8 +6,10 @@ const DEFAULT_LABELS = {
   stem: 'Equation'
 }
 
-function register (registry, options = {}) {
-  const chapterLevel = Number.isInteger(options.chapterLevel) ? options.chapterLevel : 1
+function register(registry, options = {}) {
+  const chapterLevel = Number.isInteger(options.chapterLevel)
+    ? options.chapterLevel
+    : 1
   const labels = { ...DEFAULT_LABELS, ...(options.labels || {}) }
 
   registry.postprocessor(function () {
@@ -64,7 +66,10 @@ function register (registry, options = {}) {
           continue
         }
 
-        if (blockContext === 'table' && line.includes('<caption class="title">')) {
+        if (
+          blockContext === 'table' &&
+          line.includes('<caption class="title">')
+        ) {
           counters.table += 1
           const effectiveChapter = chapter || 1
           lines[i] = line.replace(
