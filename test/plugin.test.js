@@ -3,7 +3,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const asciidoctor = require('asciidoctor')()
-const { register } = require('../dist/index')
+const { register } = require('../src/index')
 
 function convertWithPlugin(source, options = {}) {
   const registry = asciidoctor.Extensions.create()

@@ -2,15 +2,14 @@
   "name": "asciidoctor-numbered-captions",
   "version": "0.3.0",
   "description": "Asciidoctor.js plugin to include chapter numbers in figure, table, and equation captions.",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
-    "test": "npm run build && node --test",
+    "test": "node --test",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build": "tsc -p tsconfig.json",
-    "prepack": "npm run build"
+    "prepack": "npm run lint && npm test"
   },
   "keywords": [
     "asciidoctor",
@@ -32,11 +31,9 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
-    "prettier": "^3.8.1",
-    "typescript": "^5.9.3"
+    "prettier": "^3.8.1"
   },
-  "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "src"
   ]
 }

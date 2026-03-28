@@ -1,33 +1,6 @@
 'use strict'
 
-type CaptionKind = 'image' | 'table' | 'stem'
-
-interface NumberedCaptionLabels {
-  image?: string
-  table?: string
-  stem?: string
-}
-
-interface RegisterOptions {
-  chapterLevel?: number | string
-  labels?: NumberedCaptionLabels
-}
-
-interface AsciidoctorDocument {
-  getAttribute(name: string): string | undefined
-}
-
-interface AsciidoctorRegistry {
-  postprocessor(
-    callback: (this: {
-      process: (
-        processor: (document: AsciidoctorDocument, output: string) => string
-      ) => void
-    }) => void
-  ): void
-}
-
-const DEFAULT_LABELS: Required<NumberedCaptionLabels> = {
+const DEFAULT_LABELS = {
   image: 'Figure',
   table: 'Table',
   stem: 'Equation'
@@ -40,12 +13,9 @@ const ATTRIBUTE_NAMES = {
     table: 'numbered-captions-label-table',
     stem: 'numbered-captions-label-stem'
   }
-} as const
+}
 
-function toValidChapterLevel(
-  value: number | string | undefined,
-  fallback = 1
-): number {
+function toValidChapterLevel(value, fallback = 1) {
   const parsed = Number.parseInt(String(value), 10)
   if (!Number.isInteger(parsed) || parsed < 1) {
     return fallback
@@ -53,13 +23,11 @@ function toValidChapterLevel(
   return parsed
 }
 
-function firstDefined<T>(
-  ...values: Array<T | undefined | null>
-): T | undefined {
+function firstDefined(...values) {
   return values.find((value) => value !== undefined && value !== null)
 }
 
-function hasAnyHeaderAttribute(document: AsciidoctorDocument): boolean {
+function hasAnyHeaderAttribute(document) {
   return [
     ATTRIBUTE_NAMES.chapterLevel,
     ATTRIBUTE_NAMES.labels.image,
@@ -68,7 +36,7 @@ function hasAnyHeaderAttribute(document: AsciidoctorDocument): boolean {
   ].some((name) => document.getAttribute(name) !== undefined)
 }
 
-function hasAnyOptions(options: RegisterOptions): boolean {
+function hasAnyOptions(options) {
   return (
     options.chapterLevel !== undefined ||
     options.labels?.image !== undefined ||
@@ -77,10 +45,7 @@ function hasAnyOptions(options: RegisterOptions): boolean {
   )
 }
 
-function register(
-  registry: AsciidoctorRegistry,
-  options: RegisterOptions = {}
-): void {
+function register(registry, options = {}) {
   registry.postprocessor(function () {
     this.process(function (document, output) {
       const pluginEnabled =
@@ -99,7 +64,7 @@ function register(
         1
       )
 
-      const labels: Required<NumberedCaptionLabels> = {
+      const labels = {
         image:
           firstDefined(
             options.labels?.image,
@@ -123,12 +88,12 @@ function register(
       const lines = output.split('\n')
 
       let chapter = 0
-      const counters: Record<CaptionKind, number> = {
+      const counters = {
         image: 0,
         table: 0,
         stem: 0
       }
-      let blockContext: CaptionKind | null = null
+      let blockContext = null
 
       const resetCounters = () => {
         counters.image = 0
@@ -203,4 +168,4 @@ function register(
   })
 }
 
-export { register, DEFAULT_LABELS }
+module.exports = { register, DEFAULT_LABELS }
