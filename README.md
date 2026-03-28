@@ -50,6 +50,18 @@ image::sample.png[]
 
 `register(registry, options)`
 
+Header attribute example (Asciidoc):
+
+```adoc
+= Document
+:numbered-captions-chapter-level: 1
+:numbered-captions-label-image: Figure
+:numbered-captions-label-table: Table
+:numbered-captions-label-stem: Equation
+```
+
+Priority: `register(registry, options)` > Asciidoc header attributes > defaults.
+
 - `chapterLevel` (default: `1`)
   - Section level treated as chapter.
 - `labels`

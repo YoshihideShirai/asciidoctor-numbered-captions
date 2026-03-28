@@ -6,14 +6,57 @@ const DEFAULT_LABELS = {
   stem: 'Equation'
 }
 
-function register(registry, options = {}) {
-  const chapterLevel = Number.isInteger(options.chapterLevel)
-    ? options.chapterLevel
-    : 1
-  const labels = { ...DEFAULT_LABELS, ...(options.labels || {}) }
+const ATTRIBUTE_NAMES = {
+  chapterLevel: 'numbered-captions-chapter-level',
+  labels: {
+    image: 'numbered-captions-label-image',
+    table: 'numbered-captions-label-table',
+    stem: 'numbered-captions-label-stem'
+  }
+}
 
+function toValidChapterLevel(value, fallback = 1) {
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return fallback
+  }
+  return parsed
+}
+
+function firstDefined(...values) {
+  return values.find((value) => value !== undefined && value !== null)
+}
+
+function register(registry, options = {}) {
   registry.postprocessor(function () {
     this.process(function (_document, output) {
+      const chapterLevel = toValidChapterLevel(
+        firstDefined(
+          options.chapterLevel,
+          _document.getAttribute(ATTRIBUTE_NAMES.chapterLevel),
+          1
+        ),
+        1
+      )
+
+      const labels = {
+        image: firstDefined(
+          options.labels?.image,
+          _document.getAttribute(ATTRIBUTE_NAMES.labels.image),
+          DEFAULT_LABELS.image
+        ),
+        table: firstDefined(
+          options.labels?.table,
+          _document.getAttribute(ATTRIBUTE_NAMES.labels.table),
+          DEFAULT_LABELS.table
+        ),
+        stem: firstDefined(
+          options.labels?.stem,
+          _document.getAttribute(ATTRIBUTE_NAMES.labels.stem),
+          DEFAULT_LABELS.stem
+        )
+      }
+
       const lines = output.split('\n')
 
       let chapter = 0
@@ -99,5 +142,7 @@ function register(registry, options = {}) {
 
 module.exports = {
   register,
-  DEFAULT_LABELS
+  DEFAULT_LABELS,
+  ATTRIBUTE_NAMES,
+  toValidChapterLevel
 }

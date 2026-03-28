@@ -89,3 +89,54 @@ image::three.png[]
   assert.match(html, /Figure 1-2\./)
   assert.match(html, /Figure 2-1\./)
 })
+
+test('supports Asciidoc header attributes when options are not provided', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: invalid
+:numbered-captions-label-image: 図
+:numbered-captions-label-table: 表
+:numbered-captions-label-stem: 式
+
+== Chapter One
+
+.Sample Figure
+image::one.png[]
+
+.Sample Table
+|===
+|A |B
+|===
+
+.Sample Equation
+[stem]
+++++
+a = b
+++++
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /図 1-1\./)
+  assert.match(html, /表 1-1\./)
+  assert.match(html, /式 1-1\./)
+})
+
+test('prefers register(registry, options) over Asciidoc header attributes', () => {
+  const input = `= Sample
+:numbered-captions-label-image: 図
+
+== Chapter One
+
+.Sample Figure
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, {
+    labels: {
+      image: 'Figure'
+    }
+  })
+
+  assert.match(html, /Figure 1-1\./)
+  assert.doesNotMatch(html, /図 1-1\./)
+})
