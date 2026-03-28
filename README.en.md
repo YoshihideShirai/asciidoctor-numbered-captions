@@ -25,16 +25,19 @@ const numberedCaptions = require('asciidoctor-numbered-captions')
 const registry = asciidoctor.Extensions.create()
 numberedCaptions.register(registry)
 
-const html = asciidoctor.convert(`= Document
+const html = asciidoctor.convert(
+  `= Document
 
 == Chapter A
 
 .Sample Figure
 image::sample.png[]
-`, {
-  extension_registry: registry,
-  attributes: { sectnums: '', stem: 'latexmath' }
-})
+`,
+  {
+    extension_registry: registry,
+    attributes: { sectnums: '', stem: 'latexmath' }
+  }
+)
 ```
 
 ## Default targets
@@ -63,4 +66,18 @@ numberedCaptions.register(registry, {
     stem: 'Equation'
   }
 })
+```
+
+## Development
+
+```bash
+npm run lint
+npm run format:check
+npm test
+```
+
+To apply formatting changes:
+
+```bash
+npm run format
 ```
