@@ -1,6 +1,6 @@
 # asciidoctor-numbered-captions
 
-[English version](./README.en.md)
+[English version](./README.md)
 
 Asciidoctor.js の拡張プラグインです。図・表・式のキャプション番号にチャプター番号を含めます。
 
