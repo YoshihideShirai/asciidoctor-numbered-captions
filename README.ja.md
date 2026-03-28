@@ -101,3 +101,16 @@ npm test
 ```bash
 npm run format
 ```
+
+## CI/CD
+
+このリポジトリでは GitHub Actions を利用しています。
+
+- **CI** (`.github/workflows/ci.yml`)
+  - `main` への push と pull request で実行されます。
+  - Node.js 20 / 22 で `lint`、`format:check`、`build`、`test` を検証します。
+- **Release** (`.github/workflows/release.yml`)
+  - `v1.2.3` のようなタグ push をトリガーに実行されます。
+  - 品質チェックを再実行したうえで GitHub Release を作成します。
+
+リリースには `npm pack` で生成した tarball をアセットとして添付します。
