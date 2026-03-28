@@ -12,6 +12,8 @@ Examples:
 
 ## Installation
 
+TypeScript sources are compiled to `dist/` before publishing.
+
 ```bash
 npm install asciidoctor-numbered-captions
 ```
@@ -85,6 +87,7 @@ numberedCaptions.register(registry, {
 ## Development
 
 ```bash
+npm run build
 npm run lint
 npm run format:check
 npm test
