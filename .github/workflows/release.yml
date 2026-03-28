@@ -30,7 +30,7 @@ jobs:
         run: |
           set -euo pipefail
           TAG_VERSION="${TAG_NAME#v}"
-          PACKAGE_VERSION="$(node -p \"require('./package.json').version\")"
+          PACKAGE_VERSION="$(node -p 'require("./package.json").version')"
           if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
             echo "Tag version ($TAG_VERSION) does not match package.json version ($PACKAGE_VERSION)."
             exit 1
