@@ -135,3 +135,60 @@ image::one.png[]
   assert.match(html, /Figure 1-1\./)
   assert.doesNotMatch(html, /図 1-1\./)
 })
+
+test('supports chapterLevel=2 from JS options', () => {
+  const input = `= Sample
+
+== Part One
+
+=== Chapter One
+
+.Figure One
+image::one.png[]
+
+.Table One
+|===
+|A |B
+|===
+
+=== Chapter Two
+
+.Figure Two
+image::two.png[]
+`
+
+  const html = convertWithPlugin(input, {
+    chapterLevel: 2,
+    labels: {
+      image: 'Figure',
+      table: 'Table'
+    }
+  })
+
+  assert.match(html, /Figure 1-1\./)
+  assert.match(html, /Table 1-1\./)
+  assert.match(html, /Figure 2-1\./)
+})
+
+test('supports chapterLevel=2 from Asciidoc header attributes', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 2
+
+== Part One
+
+=== Chapter One
+
+.Figure One
+image::one.png[]
+
+=== Chapter Two
+
+.Figure Two
+image::two.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /Figure 1-1\./)
+  assert.match(html, /Figure 2-1\./)
+})

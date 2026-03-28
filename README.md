@@ -13,9 +13,10 @@ Examples:
 ## Installation
 
 TypeScript sources are compiled to `dist/` before publishing.
+Install directly from the GitHub repository:
 
 ```bash
-npm install asciidoctor-numbered-captions
+npm install YoshihideShirai/asciidoctor-numbered-captions
 ```
 
 ## Usage
@@ -67,7 +68,7 @@ Priority: `register(registry, options)` > Asciidoc header attributes > defaults.
 By default, this extension stays inactive and Asciidoctor standard numbering is used. The extension behavior is enabled when either header attributes or JS options are provided.
 
 - `chapterLevel` (default: `1`)
-  - Section level treated as chapter.
+  - Section level treated as chapter (`1` = `==`, `2` = `===`, ...).
 - `labels`
   - Override caption labels.
 
@@ -83,6 +84,8 @@ numberedCaptions.register(registry, {
   }
 })
 ```
+
+With Asciidoc nested sections and `chapterLevel: 2`, captions are numbered by each `===` section.
 
 ## Development
 
