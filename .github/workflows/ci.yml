@@ -62,18 +62,17 @@ jobs:
           echo "tarball=${TARBALL}" >> "$GITHUB_OUTPUT"
 
       - name: Install packed plugin in a clean project
+        id: install_check
         run: |
           set -euo pipefail
           WORKDIR=$(mktemp -d)
+          echo "workdir=${WORKDIR}" >> "$GITHUB_OUTPUT"
           cd "$WORKDIR"
           npm init -y
-          npm install "$GITHUB_WORKSPACE/${{ steps.pack.outputs.tarball }}"
+          npm install --no-audit --no-fund "$GITHUB_WORKSPACE/${{ steps.pack.outputs.tarball }}"
 
       - name: Verify plugin can be required
         run: |
           set -euo pipefail
-          WORKDIR=$(mktemp -d)
-          cd "$WORKDIR"
-          npm init -y
-          npm install "$GITHUB_WORKSPACE/${{ steps.pack.outputs.tarball }}"
+          cd "${{ steps.install_check.outputs.workdir }}"
           node -e "const plugin = require('asciidoctor-numbered-captions'); if (typeof plugin.register !== 'function') { throw new Error('register export not found') }"
