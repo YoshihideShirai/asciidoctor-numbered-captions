@@ -50,6 +50,20 @@ image::sample.png[]
 
 `register(registry, options)`
 
+ヘッダー属性での設定例（Asciidoc）:
+
+```adoc
+= Document
+:numbered-captions-chapter-level: 1
+:numbered-captions-label-image: 図
+:numbered-captions-label-table: 表
+:numbered-captions-label-stem: 式
+```
+
+優先順位: `register(registry, options)` > Asciidocヘッダー属性 > デフォルト値。
+
+デフォルトではこの拡張は無効のままで、Asciidoctor標準のナンバリングが使われます。Asciidocヘッダー属性またはJS optionsを指定した場合にのみ、この拡張の挙動が有効になります。
+
 - `chapterLevel` (default: `1`)
   - どのセクションレベルをチャプターとして扱うか。
 - `labels`
