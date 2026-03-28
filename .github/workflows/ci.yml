@@ -39,14 +39,10 @@ jobs:
       - name: Run tests
         run: npm test
 
-  publish:
-    name: Publish to npm
+  install:
+    name: Verify npm install
     runs-on: ubuntu-latest
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
       - name: Checkout
@@ -56,26 +52,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Pack plugin
+        run: npm pack
 
-      - name: Check if version is already published
-        id: npm_check
+      - name: Install packed plugin in a clean project
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view "asciidoctor-numbered-captions@${VERSION}" version > /dev/null 2>&1; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-            echo "Version ${VERSION} is already published. Skipping npm publish."
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-            echo "Version ${VERSION} is not published yet. Proceeding to npm publish."
-          fi
+          mkdir -p /tmp/npm-install-check
+          cd /tmp/npm-install-check
+          npm init -y
+          npm install "$GITHUB_WORKSPACE"/asciidoctor-numbered-captions-*.tgz
 
-      - name: Publish package
-        if: steps.npm_check.outputs.published == 'false'
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify plugin can be required
+        run: |
+          cd /tmp/npm-install-check
+          node -e "const plugin = require('asciidoctor-numbered-captions'); if (typeof plugin.register !== 'function') { throw new Error('register export not found') }"
