@@ -106,7 +106,7 @@ This repository uses GitHub Actions.
 
 - **CI** (`.github/workflows/ci.yml`)
   - Runs on pushes to `main` and pull requests.
-  - Verifies `lint`, `format:check`, and `test` on Node.js 20 and 22.
+  - Verifies `lint`, `format:check`, and `test` on Node.js 20 and 24.
 - **Release** (`.github/workflows/release.yml`)
   - Runs when a tag like `v1.2.3` is pushed.
   - Re-runs quality checks and creates a GitHub Release.

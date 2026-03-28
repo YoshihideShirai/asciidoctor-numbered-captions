@@ -106,7 +106,7 @@ npm run format
 
 - **CI** (`.github/workflows/ci.yml`)
   - `main` への push と pull request で実行されます。
-  - Node.js 20 / 22 で `lint`、`format:check`、`test` を検証します。
+  - Node.js 20 / 24 で `lint`、`format:check`、`test` を検証します。
 - **Release** (`.github/workflows/release.yml`)
   - `v1.2.3` のようなタグ push をトリガーに実行されます。
   - 品質チェックを再実行したうえで GitHub Release を作成します。
