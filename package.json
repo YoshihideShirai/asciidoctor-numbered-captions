@@ -1,6 +1,6 @@
 {
   "name": "asciidoctor-numbered-captions",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Asciidoctor.js plugin to include chapter numbers in figure, table, and equation captions.",
   "main": "dist/index.js",
   "type": "commonjs",
