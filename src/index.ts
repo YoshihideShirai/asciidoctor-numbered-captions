@@ -1,6 +1,33 @@
 'use strict'
 
-const DEFAULT_LABELS = {
+type CaptionKind = 'image' | 'table' | 'stem'
+
+interface NumberedCaptionLabels {
+  image?: string
+  table?: string
+  stem?: string
+}
+
+interface RegisterOptions {
+  chapterLevel?: number | string
+  labels?: NumberedCaptionLabels
+}
+
+interface AsciidoctorDocument {
+  getAttribute(name: string): string | undefined
+}
+
+interface AsciidoctorRegistry {
+  postprocessor(
+    callback: (this: {
+      process: (
+        processor: (document: AsciidoctorDocument, output: string) => string
+      ) => void
+    }) => void
+  ): void
+}
+
+const DEFAULT_LABELS: Required<NumberedCaptionLabels> = {
   image: 'Figure',
   table: 'Table',
   stem: 'Equation'
@@ -13,21 +40,26 @@ const ATTRIBUTE_NAMES = {
     table: 'numbered-captions-label-table',
     stem: 'numbered-captions-label-stem'
   }
-}
+} as const
 
-function toValidChapterLevel(value, fallback = 1) {
-  const parsed = Number.parseInt(value, 10)
+function toValidChapterLevel(
+  value: number | string | undefined,
+  fallback = 1
+): number {
+  const parsed = Number.parseInt(String(value), 10)
   if (!Number.isInteger(parsed) || parsed < 1) {
     return fallback
   }
   return parsed
 }
 
-function firstDefined(...values) {
+function firstDefined<T>(
+  ...values: Array<T | undefined | null>
+): T | undefined {
   return values.find((value) => value !== undefined && value !== null)
 }
 
-function hasAnyHeaderAttribute(document) {
+function hasAnyHeaderAttribute(document: AsciidoctorDocument): boolean {
   return [
     ATTRIBUTE_NAMES.chapterLevel,
     ATTRIBUTE_NAMES.labels.image,
@@ -36,7 +68,7 @@ function hasAnyHeaderAttribute(document) {
   ].some((name) => document.getAttribute(name) !== undefined)
 }
 
-function hasAnyOptions(options) {
+function hasAnyOptions(options: RegisterOptions): boolean {
   return (
     options.chapterLevel !== undefined ||
     options.labels?.image !== undefined ||
@@ -45,11 +77,14 @@ function hasAnyOptions(options) {
   )
 }
 
-function register(registry, options = {}) {
+function register(
+  registry: AsciidoctorRegistry,
+  options: RegisterOptions = {}
+): void {
   registry.postprocessor(function () {
-    this.process(function (_document, output) {
+    this.process(function (document, output) {
       const pluginEnabled =
-        hasAnyOptions(options) || hasAnyHeaderAttribute(_document)
+        hasAnyOptions(options) || hasAnyHeaderAttribute(document)
 
       if (!pluginEnabled) {
         return output
@@ -58,39 +93,42 @@ function register(registry, options = {}) {
       const chapterLevel = toValidChapterLevel(
         firstDefined(
           options.chapterLevel,
-          _document.getAttribute(ATTRIBUTE_NAMES.chapterLevel),
+          document.getAttribute(ATTRIBUTE_NAMES.chapterLevel),
           1
         ),
         1
       )
 
-      const labels = {
-        image: firstDefined(
-          options.labels?.image,
-          _document.getAttribute(ATTRIBUTE_NAMES.labels.image),
-          DEFAULT_LABELS.image
-        ),
-        table: firstDefined(
-          options.labels?.table,
-          _document.getAttribute(ATTRIBUTE_NAMES.labels.table),
-          DEFAULT_LABELS.table
-        ),
-        stem: firstDefined(
-          options.labels?.stem,
-          _document.getAttribute(ATTRIBUTE_NAMES.labels.stem),
-          DEFAULT_LABELS.stem
-        )
+      const labels: Required<NumberedCaptionLabels> = {
+        image:
+          firstDefined(
+            options.labels?.image,
+            document.getAttribute(ATTRIBUTE_NAMES.labels.image),
+            DEFAULT_LABELS.image
+          ) ?? DEFAULT_LABELS.image,
+        table:
+          firstDefined(
+            options.labels?.table,
+            document.getAttribute(ATTRIBUTE_NAMES.labels.table),
+            DEFAULT_LABELS.table
+          ) ?? DEFAULT_LABELS.table,
+        stem:
+          firstDefined(
+            options.labels?.stem,
+            document.getAttribute(ATTRIBUTE_NAMES.labels.stem),
+            DEFAULT_LABELS.stem
+          ) ?? DEFAULT_LABELS.stem
       }
 
       const lines = output.split('\n')
 
       let chapter = 0
-      const counters = {
+      const counters: Record<CaptionKind, number> = {
         image: 0,
         table: 0,
         stem: 0
       }
-      let blockContext = null
+      let blockContext: CaptionKind | null = null
 
       const resetCounters = () => {
         counters.image = 0
@@ -165,7 +203,4 @@ function register(registry, options = {}) {
   })
 }
 
-module.exports = {
-  register,
-  DEFAULT_LABELS
-}
+export { register, DEFAULT_LABELS }
