@@ -62,7 +62,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check if version is already published
+        id: npm_check
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "asciidoctor-numbered-captions@${VERSION}" version > /dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "Version ${VERSION} is already published. Skipping npm publish."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            echo "Version ${VERSION} is not published yet. Proceeding to npm publish."
+          fi
+
       - name: Publish package
+        if: steps.npm_check.outputs.published == 'false'
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
