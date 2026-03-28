@@ -139,7 +139,7 @@ function register(
       for (let i = 0; i < lines.length; i += 1) {
         const line = lines[i]
 
-        if (chapterLevel === 1 && line.includes('<div class="sect1">')) {
+        if (line.includes(`<div class="sect${chapterLevel}">`)) {
           chapter += 1
           resetCounters()
           blockContext = null
