@@ -192,3 +192,52 @@ image::two.png[]
   assert.match(html, /Figure 1-1\./)
   assert.match(html, /Figure 2-1\./)
 })
+
+test('handles chapters with multiple tables and without figures', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 1
+:numbered-captions-label-image: Figure
+:numbered-captions-label-table: Table
+:numbered-captions-label-stem: Equation
+
+== Chapter One
+
+.Table One
+|===
+|A |B
+|===
+
+.Table Two
+|===
+|C |D
+|===
+
+== Chapter Two
+
+.Chapter Two Equation
+[stem]
+++++
+x = y
+++++
+
+.Table Three
+|===
+|E |F
+|===
+
+== Chapter Three
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /Table 1-1\./)
+  assert.match(html, /Table 1-2\./)
+  assert.match(html, /Equation 2-1\./)
+  assert.match(html, /Table 2-1\./)
+  assert.match(html, /Figure 3-1\./)
+  assert.doesNotMatch(html, /Figure 1-1\./)
+  assert.doesNotMatch(html, /Figure 2-1\./)
+})
