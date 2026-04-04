@@ -1,6 +1,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const asciidoctor = require('asciidoctor')()
+const prettier = require('prettier')
 const NumberedCaptions = require('../src')
 
 const PRESET_CONFIGS = [
@@ -471,8 +472,34 @@ const page = `<!doctype html>
 
 const presetsModule = `globalThis.demoPresets = ${JSON.stringify(presets, null, 2)}\n`
 
-fs.writeFileSync(indexPath, page)
-fs.writeFileSync(presetsPath, presetsModule)
+async function writeFormattedDemoAssets() {
+  const indexPrettierConfig =
+    (await prettier.resolveConfig(indexPath, { editorconfig: true })) ?? {}
+  const presetsPrettierConfig =
+    (await prettier.resolveConfig(presetsPath, { editorconfig: true })) ?? {}
+  const formattedPage = await prettier.format(page, {
+    ...indexPrettierConfig,
+    filepath: indexPath
+  })
+  const formattedPresetsModule = await prettier.format(presetsModule, {
+    ...presetsPrettierConfig,
+    filepath: presetsPath
+  })
+  const pageWithTrailingNewline = formattedPage.endsWith('\n')
+    ? formattedPage
+    : `${formattedPage}\n`
+  const presetsWithTrailingNewline = formattedPresetsModule.endsWith('\n')
+    ? formattedPresetsModule
+    : `${formattedPresetsModule}\n`
 
-console.log(`Demo site generated: ${indexPath}`)
-console.log(`Preset module generated: ${presetsPath}`)
+  fs.writeFileSync(indexPath, pageWithTrailingNewline)
+  fs.writeFileSync(presetsPath, presetsWithTrailingNewline)
+
+  console.log(`Demo site generated: ${indexPath}`)
+  console.log(`Preset module generated: ${presetsPath}`)
+}
+
+writeFormattedDemoAssets().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
