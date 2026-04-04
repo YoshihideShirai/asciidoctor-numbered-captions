@@ -116,6 +116,63 @@ a = b
   assert.match(html, /式 1-1\./)
 })
 
+test('uses Asciidoctor standard figure/table caption attributes as fallback labels', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 1
+:figure-caption: 図
+:table-caption: 表
+
+== Chapter One
+
+.Sample Figure
+image::one.png[]
+
+.Sample Table
+|===
+|A |B
+|===
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /図 1-1\./)
+  assert.match(html, /表 1-1\./)
+})
+
+test('uses Asciidoctor standard equation/stem caption attributes as fallback labels', () => {
+  const equationCaptionInput = `= Sample
+:numbered-captions-chapter-level: 1
+:equation-caption: Eq
+
+== Chapter One
+
+.Sample Equation
+[stem]
+++++
+a = b
+++++
+`
+
+  const stemCaptionInput = `= Sample
+:numbered-captions-chapter-level: 1
+:stem-caption: Stem
+
+== Chapter One
+
+.Sample Equation
+[stem]
+++++
+a = b
+++++
+`
+
+  const htmlWithEquationCaption = convertWithPlugin(equationCaptionInput)
+  const htmlWithStemCaption = convertWithPlugin(stemCaptionInput)
+
+  assert.match(htmlWithEquationCaption, /Eq 1-1\./)
+  assert.match(htmlWithStemCaption, /Stem 1-1\./)
+})
+
 test('prefers register(registry, options) over Asciidoc header attributes', () => {
   const input = `= Sample
 :numbered-captions-label-image: 図
