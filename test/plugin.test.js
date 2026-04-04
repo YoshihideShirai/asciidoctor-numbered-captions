@@ -289,3 +289,66 @@ image::one.png[]
   assert.deepEqual(extractNumbering(html, 'Equation'), ['2-1'])
   assert.deepEqual(extractNumbering(html, 'Figure'), ['3-1'])
 })
+
+test('supports custom targets with options.targets object while keeping default targets', () => {
+  const input = `= Sample
+
+== Chapter One
+
+.Sample Listing
+[source,javascript]
+----
+console.log('hello')
+----
+
+.Sample Figure
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, {
+    chapterLevel: 1,
+    targets: {
+      image: true,
+      table: true,
+      stem: true,
+      listing: {
+        context: 'listing',
+        label: 'Listing',
+        counter: 'listing',
+        labelAttribute: 'listing-caption'
+      }
+    }
+  })
+
+  assert.deepEqual(extractNumbering(html, 'Listing'), ['1-1'])
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
+})
+
+test('ignores unknown targets by default and can fail explicitly', () => {
+  const input = `= Sample
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, {
+    chapterLevel: 1,
+    targets: ['image', 'unknown-target']
+  })
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
+
+  assert.throws(
+    () =>
+      convertWithPlugin(input, {
+        chapterLevel: 1,
+        targets: {
+          image: true,
+          'unknown-target': true,
+          onUnknown: 'error'
+        }
+      }),
+    /Unknown target: unknown-target/
+  )
+})
