@@ -147,4 +147,27 @@ This repository uses GitHub Actions.
   - Runs when a tag like `v1.2.3` is pushed.
   - Re-runs quality checks and creates a GitHub Release.
 
+- **Pages** (`.github/workflows/pages.yml`)
+  - Runs on pushes to `main` (and manual dispatch).
+  - Executes `npm ci` and `npm run build:demo`.
+  - Publishes `docs/` to GitHub Pages using `configure-pages` / `upload-pages-artifact` / `deploy-pages`.
+
 The release uploads the `npm pack` tarball as a release asset.
+
+## GitHub Pages setup
+
+After adding `.github/workflows/pages.yml`, switch the repository Pages source to **GitHub Actions**:
+
+1. Open the repository on GitHub.
+2. Go to **Settings** → **Pages**.
+3. In **Build and deployment**, set **Source** to **GitHub Actions**.
+4. Push to `main` (or run the workflow manually) and confirm deployment succeeds in the **Actions** tab.
+
+## Demo verification checklist
+
+After deployment, verify the demo page with these points:
+
+- Figure, table, and equation captions are numbered with chapter prefix (for example `Figure 1-1`, `Table 1-1`, `Equation 1-1`).
+- Numbering resets when chapter changes.
+- Changing `chapterLevel` (for example from `1` to `2`) updates the chapter unit used for caption numbering.
+- Content outside configured chapter sections is treated as chapter `1` as expected.
