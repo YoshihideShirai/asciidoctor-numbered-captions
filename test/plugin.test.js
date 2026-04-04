@@ -20,6 +20,12 @@ function convertWithPlugin(source, options = {}) {
   })
 }
 
+function extractNumbering(html, label) {
+  return [...html.matchAll(new RegExp(`${label} (\\d+-\\d+)\\.`, 'g'))].map(
+    ([, numbering]) => numbering
+  )
+}
+
 test('keeps Asciidoctor default numbering when no plugin config is provided', () => {
   const input = `= Sample
 
@@ -32,7 +38,7 @@ image::one.png[]
   const html = convertWithPlugin(input)
 
   assert.match(html, /Figure 1\. Figure One/)
-  assert.doesNotMatch(html, /Figure 1-1\./)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
 test('numbers image/table/equation captions as chapter-counter from header attributes', () => {
@@ -74,12 +80,9 @@ F = ma
 
   const html = convertWithPlugin(input)
 
-  assert.match(html, /Figure 1-1\./)
-  assert.match(html, /Table 1-1\./)
-  assert.match(html, /Equation 1-1\./)
-  assert.match(html, /Figure 2-1\./)
-  assert.match(html, /Table 2-1\./)
-  assert.match(html, /Equation 2-1\./)
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '2-1'])
+  assert.deepEqual(extractNumbering(html, 'Table'), ['1-1', '2-1'])
+  assert.deepEqual(extractNumbering(html, 'Equation'), ['1-1', '2-1'])
 })
 
 test('supports Asciidoctor standard caption attributes when options are not provided', () => {
@@ -108,9 +111,9 @@ a = b
 
   const html = convertWithPlugin(input)
 
-  assert.match(html, /図 1-1\./)
-  assert.match(html, /表 1-1\./)
-  assert.match(html, /式 1-1\./)
+  assert.deepEqual(extractNumbering(html, '図'), ['1-1'])
+  assert.deepEqual(extractNumbering(html, '表'), ['1-1'])
+  assert.deepEqual(extractNumbering(html, '式'), ['1-1'])
 })
 
 test('uses Asciidoctor standard figure/table caption attributes as fallback labels', () => {
@@ -132,8 +135,8 @@ image::one.png[]
 
   const html = convertWithPlugin(input)
 
-  assert.match(html, /図 1-1\./)
-  assert.match(html, /表 1-1\./)
+  assert.deepEqual(extractNumbering(html, '図'), ['1-1'])
+  assert.deepEqual(extractNumbering(html, '表'), ['1-1'])
 })
 
 test('uses Asciidoctor standard equation/stem caption attributes as fallback labels', () => {
@@ -166,8 +169,8 @@ a = b
   const htmlWithEquationCaption = convertWithPlugin(equationCaptionInput)
   const htmlWithStemCaption = convertWithPlugin(stemCaptionInput)
 
-  assert.match(htmlWithEquationCaption, /Eq 1-1\./)
-  assert.match(htmlWithStemCaption, /Stem 1-1\./)
+  assert.deepEqual(extractNumbering(htmlWithEquationCaption, 'Eq'), ['1-1'])
+  assert.deepEqual(extractNumbering(htmlWithStemCaption, 'Stem'), ['1-1'])
 })
 
 test('prefers register(registry, options) over Asciidoc header attributes', () => {
@@ -186,8 +189,8 @@ image::one.png[]
     }
   })
 
-  assert.match(html, /Figure 1-1\./)
-  assert.doesNotMatch(html, /図 1-1\./)
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
+  assert.deepEqual(extractNumbering(html, '図'), [])
 })
 
 test('supports chapterLevel=2 from JS options', () => {
@@ -219,9 +222,8 @@ image::two.png[]
     }
   })
 
-  assert.match(html, /Figure 1-1\./)
-  assert.match(html, /Table 1-1\./)
-  assert.match(html, /Figure 2-1\./)
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '2-1'])
+  assert.deepEqual(extractNumbering(html, 'Table'), ['1-1'])
 })
 
 test('supports chapterLevel=2 from Asciidoc header attributes', () => {
@@ -243,8 +245,7 @@ image::two.png[]
 
   const html = convertWithPlugin(input)
 
-  assert.match(html, /Figure 1-1\./)
-  assert.match(html, /Figure 2-1\./)
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '2-1'])
 })
 
 test('handles chapters with multiple tables and without figures', () => {
@@ -284,11 +285,7 @@ image::one.png[]
 
   const html = convertWithPlugin(input)
 
-  assert.match(html, /Table 1-1\./)
-  assert.match(html, /Table 1-2\./)
-  assert.match(html, /Equation 2-1\./)
-  assert.match(html, /Table 2-1\./)
-  assert.match(html, /Figure 3-1\./)
-  assert.doesNotMatch(html, /Figure 1-1\./)
-  assert.doesNotMatch(html, /Figure 2-1\./)
+  assert.deepEqual(extractNumbering(html, 'Table'), ['1-1', '1-2', '2-1'])
+  assert.deepEqual(extractNumbering(html, 'Equation'), ['2-1'])
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['3-1'])
 })
