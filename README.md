@@ -77,6 +77,34 @@ By default, this extension stays inactive and Asciidoctor standard numbering is 
 - `labels`
   - Override caption labels.
 
+- `targets` (default: `image/table/stem`)
+  - `Array<string>`: use only selected built-in targets.
+  - `Object`: enable/disable built-ins and define custom targets.
+  - Unknown targets are ignored by default. Set `targets.onUnknown: 'error'` to throw an explicit error.
+
+Custom target example:
+
+```js
+numberedCaptions.register(registry, {
+  chapterLevel: 1,
+  labels: {
+    image: 'Figure',
+    listing: 'Listing'
+  },
+  targets: {
+    image: true,
+    table: true,
+    stem: true,
+    listing: {
+      context: 'listing',
+      labelAttribute: 'listing-caption',
+      counter: 'listing'
+    },
+    onUnknown: 'error'
+  }
+})
+```
+
 Example:
 
 ```js

@@ -77,6 +77,34 @@ image::sample.png[]
 - `labels`
   - ラベルの上書き。
 
+- `targets`（default: `image/table/stem`）
+  - `Array<string>`: 利用する組み込みターゲットのみを指定します。
+  - `Object`: 組み込みターゲットの有効/無効化やカスタムターゲット定義ができます。
+  - 未知ターゲットは既定で無視されます。`targets.onUnknown: 'error'` を指定すると明示エラーにできます。
+
+カスタムターゲット例:
+
+```js
+numberedCaptions.register(registry, {
+  chapterLevel: 1,
+  labels: {
+    image: '図',
+    listing: 'コード'
+  },
+  targets: {
+    image: true,
+    table: true,
+    stem: true,
+    listing: {
+      context: 'listing',
+      labelAttribute: 'listing-caption',
+      counter: 'listing'
+    },
+    onUnknown: 'error'
+  }
+})
+```
+
 例:
 
 ```js
