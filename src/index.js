@@ -69,6 +69,15 @@ function resolveChapterSection(block, chapterLevel) {
   return null
 }
 
+function resolveEffectiveChapter(chapterSection, chapterNumbers) {
+  // If no section exists at chapterLevel (e.g., preamble-only or documents without headings),
+  // treat the block as chapter 1 so numbering remains stable as `1-n`.
+  if (!chapterSection) {
+    return 1
+  }
+  return chapterNumbers.get(chapterSection)
+}
+
 function createContextMatcher(context, titled = true) {
   return (node) => {
     if (node.getContext?.() !== context) {
@@ -284,9 +293,10 @@ function register(registry, options = {}) {
           chapterNumbers.set(chapterSection, chapterIndex)
         }
 
-        const effectiveChapter = chapterSection
-          ? chapterNumbers.get(chapterSection)
-          : 1
+        const effectiveChapter = resolveEffectiveChapter(
+          chapterSection,
+          chapterNumbers
+        )
 
         if (!countersByChapter.has(effectiveChapter)) {
           countersByChapter.set(effectiveChapter, {})

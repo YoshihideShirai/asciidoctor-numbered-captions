@@ -120,6 +120,8 @@ numberedCaptions.register(registry, {
 
 Asciidoc の入れ子セクションで `chapterLevel: 2` を指定すると、`===` ごとに番号が振られます。
 
+設定した `chapterLevel` のセクションが存在しない場合（例: preamble 内のみ、または章見出しなし文書）は、チャプター `1` として採番します。
+
 ## 開発
 
 ```bash
