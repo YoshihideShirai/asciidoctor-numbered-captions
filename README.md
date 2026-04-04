@@ -120,6 +120,8 @@ numberedCaptions.register(registry, {
 
 With Asciidoc nested sections and `chapterLevel: 2`, captions are numbered by each `===` section.
 
+If no section exists at the configured `chapterLevel`, captions are treated as chapter `1` (for example: preamble-only content or documents without chapter headings).
+
 ## Development
 
 ```bash

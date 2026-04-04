@@ -248,6 +248,66 @@ image::two.png[]
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '2-1'])
 })
 
+test('treats preamble captions as chapter 1 and keeps numbering continuous into first chapter', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 1
+
+.Preamble Figure
+image::one.png[]
+
+== Chapter One
+
+.Chapter Figure
+image::two.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '1-2'])
+})
+
+test('treats blocks as chapter 1 when only shallower or deeper sections exist', () => {
+  const shallowOnlyInput = `= Sample
+:numbered-captions-chapter-level: 2
+
+== Part One
+
+.Figure One
+image::one.png[]
+`
+
+  const deepOnlyInput = `= Sample
+:numbered-captions-chapter-level: 1
+
+=== Deep Section
+
+.Figure One
+image::one.png[]
+`
+
+  const shallowOnlyHtml = convertWithPlugin(shallowOnlyInput)
+  const deepOnlyHtml = convertWithPlugin(deepOnlyInput)
+
+  assert.deepEqual(extractNumbering(shallowOnlyHtml, 'Figure'), ['1-1'])
+  assert.deepEqual(extractNumbering(deepOnlyHtml, 'Figure'), ['1-1'])
+})
+
+test('treats captions as chapter 1 in a document without chapter headings', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 1
+
+.Figure One
+image::one.png[]
+
+.Figure Two
+image::two.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '1-2'])
+})
+
 test('handles chapters with multiple tables and without figures', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
