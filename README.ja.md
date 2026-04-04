@@ -57,14 +57,14 @@ image::sample.png[]
 ```adoc
 = Document
 :numbered-captions-chapter-level: 1
-:numbered-captions-label-image: 図
-:numbered-captions-label-table: 表
-:numbered-captions-label-stem: 式
+:figure-caption: 図
+:table-caption: 表
+:equation-caption: 式
 ```
 
 優先順位: `register(registry, options)` > Asciidocヘッダー属性 > デフォルト値。
 
-`numbered-captions-label-*` を指定しない場合、この拡張は Asciidoctor 標準属性を参照します。
+この拡張は Asciidoctor 標準のキャプション属性を参照します。
 
 - image: `:figure-caption:`
 - table: `:table-caption:`

@@ -38,9 +38,6 @@ image::one.png[]
 test('numbers image/table/equation captions as chapter-counter from header attributes', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
-:numbered-captions-label-image: Figure
-:numbered-captions-label-table: Table
-:numbered-captions-label-stem: Equation
 
 == Chapter One
 
@@ -85,12 +82,12 @@ F = ma
   assert.match(html, /Equation 2-1\./)
 })
 
-test('supports Asciidoc header attributes when options are not provided', () => {
+test('supports Asciidoctor standard caption attributes when options are not provided', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: invalid
-:numbered-captions-label-image: 図
-:numbered-captions-label-table: 表
-:numbered-captions-label-stem: 式
+:figure-caption: 図
+:table-caption: 表
+:equation-caption: 式
 
 == Chapter One
 
@@ -175,7 +172,7 @@ a = b
 
 test('prefers register(registry, options) over Asciidoc header attributes', () => {
   const input = `= Sample
-:numbered-captions-label-image: 図
+:figure-caption: 図
 
 == Chapter One
 
@@ -253,9 +250,6 @@ image::two.png[]
 test('handles chapters with multiple tables and without figures', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
-:numbered-captions-label-image: Figure
-:numbered-captions-label-table: Table
-:numbered-captions-label-stem: Equation
 
 == Chapter One
 
