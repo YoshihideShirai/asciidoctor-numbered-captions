@@ -64,7 +64,11 @@ image::sample.png[]
 
 優先順位: `register(registry, options)` > Asciidocヘッダー属性 > デフォルト値。
 
-図・表ラベルは、`numbered-captions-label-*` を指定しない場合、Asciidoctor標準属性の `:figure-caption:` / `:table-caption:` を参照します。
+`numbered-captions-label-*` を指定しない場合、この拡張は Asciidoctor 標準属性を参照します。
+
+- image: `:figure-caption:`
+- table: `:table-caption:`
+- stem: `:equation-caption:`（または `:stem-caption:`）
 
 デフォルトではこの拡張は無効のままで、Asciidoctor標準のナンバリングが使われます。Asciidocヘッダー属性またはJS optionsを指定した場合にのみ、この拡張の挙動が有効になります。
 

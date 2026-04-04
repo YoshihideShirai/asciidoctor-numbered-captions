@@ -139,6 +139,40 @@ image::one.png[]
   assert.match(html, /表 1-1\./)
 })
 
+test('uses Asciidoctor standard equation/stem caption attributes as fallback labels', () => {
+  const equationCaptionInput = `= Sample
+:numbered-captions-chapter-level: 1
+:equation-caption: Eq
+
+== Chapter One
+
+.Sample Equation
+[stem]
+++++
+a = b
+++++
+`
+
+  const stemCaptionInput = `= Sample
+:numbered-captions-chapter-level: 1
+:stem-caption: Stem
+
+== Chapter One
+
+.Sample Equation
+[stem]
+++++
+a = b
+++++
+`
+
+  const htmlWithEquationCaption = convertWithPlugin(equationCaptionInput)
+  const htmlWithStemCaption = convertWithPlugin(stemCaptionInput)
+
+  assert.match(htmlWithEquationCaption, /Eq 1-1\./)
+  assert.match(htmlWithStemCaption, /Stem 1-1\./)
+})
+
 test('prefers register(registry, options) over Asciidoc header attributes', () => {
   const input = `= Sample
 :numbered-captions-label-image: 図

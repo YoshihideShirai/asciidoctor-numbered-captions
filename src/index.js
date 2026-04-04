@@ -15,7 +15,8 @@ const ATTRIBUTE_NAMES = {
   },
   standardLabels: {
     image: 'figure-caption',
-    table: 'table-caption'
+    table: 'table-caption',
+    stem: ['equation-caption', 'stem-caption']
   }
 }
 
@@ -29,6 +30,16 @@ function toValidChapterLevel(value, fallback = 1) {
 
 function firstDefined(...values) {
   return values.find((value) => value !== undefined && value !== null)
+}
+
+function firstDocumentAttribute(document, names = []) {
+  for (const name of names) {
+    const value = document.getAttribute(name)
+    if (value !== undefined && value !== null) {
+      return value
+    }
+  }
+  return undefined
 }
 
 function hasAnyHeaderAttribute(document) {
@@ -87,6 +98,10 @@ function register(registry, options = {}) {
           firstDefined(
             options.labels?.stem,
             document.getAttribute(ATTRIBUTE_NAMES.labels.stem),
+            firstDocumentAttribute(
+              document,
+              ATTRIBUTE_NAMES.standardLabels.stem
+            ),
             DEFAULT_LABELS.stem
           ) ?? DEFAULT_LABELS.stem
       }
