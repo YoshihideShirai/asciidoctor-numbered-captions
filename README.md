@@ -64,6 +64,8 @@ Header attribute example (Asciidoc):
 
 Priority: `register(registry, options)` > Asciidoc header attributes > defaults.
 
+For image and table labels, when `numbered-captions-label-*` is not set, this extension falls back to Asciidoctor standard attributes `:figure-caption:` / `:table-caption:`.
+
 By default, this extension stays inactive and Asciidoctor standard numbering is used. The extension behavior is enabled when either header attributes or JS options are provided.
 
 - `chapterLevel` (default: `1`)

@@ -12,6 +12,10 @@ const ATTRIBUTE_NAMES = {
     image: 'numbered-captions-label-image',
     table: 'numbered-captions-label-table',
     stem: 'numbered-captions-label-stem'
+  },
+  standardLabels: {
+    image: 'figure-caption',
+    table: 'table-caption'
   }
 }
 
@@ -69,12 +73,14 @@ function register(registry, options = {}) {
           firstDefined(
             options.labels?.image,
             document.getAttribute(ATTRIBUTE_NAMES.labels.image),
+            document.getAttribute(ATTRIBUTE_NAMES.standardLabels.image),
             DEFAULT_LABELS.image
           ) ?? DEFAULT_LABELS.image,
         table:
           firstDefined(
             options.labels?.table,
             document.getAttribute(ATTRIBUTE_NAMES.labels.table),
+            document.getAttribute(ATTRIBUTE_NAMES.standardLabels.table),
             DEFAULT_LABELS.table
           ) ?? DEFAULT_LABELS.table,
         stem:
