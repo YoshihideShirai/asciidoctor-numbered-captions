@@ -57,14 +57,14 @@ Header attribute example (Asciidoc):
 ```adoc
 = Document
 :numbered-captions-chapter-level: 1
-:numbered-captions-label-image: Figure
-:numbered-captions-label-table: Table
-:numbered-captions-label-stem: Equation
+:figure-caption: Figure
+:table-caption: Table
+:equation-caption: Equation
 ```
 
 Priority: `register(registry, options)` > Asciidoc header attributes > defaults.
 
-When `numbered-captions-label-*` is not set, this extension falls back to Asciidoctor standard attributes:
+This extension uses Asciidoctor standard caption attributes:
 
 - image: `:figure-caption:`
 - table: `:table-caption:`

@@ -8,11 +8,6 @@ const DEFAULT_LABELS = {
 
 const ATTRIBUTE_NAMES = {
   chapterLevel: 'numbered-captions-chapter-level',
-  labels: {
-    image: 'numbered-captions-label-image',
-    table: 'numbered-captions-label-table',
-    stem: 'numbered-captions-label-stem'
-  },
   standardLabels: {
     image: 'figure-caption',
     table: 'table-caption',
@@ -43,12 +38,9 @@ function firstDocumentAttribute(document, names = []) {
 }
 
 function hasAnyHeaderAttribute(document) {
-  return [
-    ATTRIBUTE_NAMES.chapterLevel,
-    ATTRIBUTE_NAMES.labels.image,
-    ATTRIBUTE_NAMES.labels.table,
-    ATTRIBUTE_NAMES.labels.stem
-  ].some((name) => document.getAttribute(name) !== undefined)
+  return [ATTRIBUTE_NAMES.chapterLevel].some(
+    (name) => document.getAttribute(name) !== undefined
+  )
 }
 
 function hasAnyOptions(options) {
@@ -83,21 +75,18 @@ function register(registry, options = {}) {
         image:
           firstDefined(
             options.labels?.image,
-            document.getAttribute(ATTRIBUTE_NAMES.labels.image),
             document.getAttribute(ATTRIBUTE_NAMES.standardLabels.image),
             DEFAULT_LABELS.image
           ) ?? DEFAULT_LABELS.image,
         table:
           firstDefined(
             options.labels?.table,
-            document.getAttribute(ATTRIBUTE_NAMES.labels.table),
             document.getAttribute(ATTRIBUTE_NAMES.standardLabels.table),
             DEFAULT_LABELS.table
           ) ?? DEFAULT_LABELS.table,
         stem:
           firstDefined(
             options.labels?.stem,
-            document.getAttribute(ATTRIBUTE_NAMES.labels.stem),
             firstDocumentAttribute(
               document,
               ATTRIBUTE_NAMES.standardLabels.stem
