@@ -52,14 +52,28 @@ function hasAnyOptions(options) {
   )
 }
 
+function resolveChapterSection(block, chapterLevel) {
+  let node = block
+  while (node) {
+    if (
+      node.getContext?.() === 'section' &&
+      node.getLevel?.() === chapterLevel
+    ) {
+      return node
+    }
+    node = node.getParent?.()
+  }
+  return null
+}
+
 function register(registry, options = {}) {
-  registry.postprocessor(function () {
-    this.process(function (document, output) {
+  registry.treeProcessor(function () {
+    this.process(function (document) {
       const pluginEnabled =
         hasAnyOptions(options) || hasAnyHeaderAttribute(document)
 
       if (!pluginEnabled) {
-        return output
+        return document
       }
 
       const chapterLevel = toValidChapterLevel(
@@ -95,85 +109,50 @@ function register(registry, options = {}) {
           ) ?? DEFAULT_LABELS.stem
       }
 
-      const lines = output.split('\n')
+      const chapterNumbers = new Map()
+      let chapterIndex = 0
+      const countersByChapter = new Map()
+      const targetBlocks = document.findBy((node) => {
+        const context = node.getContext?.()
+        return (
+          (context === 'image' || context === 'table' || context === 'stem') &&
+          Boolean(node.getTitle?.())
+        )
+      })
 
-      let chapter = 0
-      const counters = {
-        image: 0,
-        table: 0,
-        stem: 0
-      }
-      let blockContext = null
-
-      const resetCounters = () => {
-        counters.image = 0
-        counters.table = 0
-        counters.stem = 0
-      }
-
-      for (let i = 0; i < lines.length; i += 1) {
-        const line = lines[i]
-
-        if (line.includes(`<div class="sect${chapterLevel}">`)) {
-          chapter += 1
-          resetCounters()
-          blockContext = null
-          continue
+      for (const block of targetBlocks) {
+        const context = block.getContext()
+        const chapterSection = resolveChapterSection(block, chapterLevel)
+        if (chapterSection && !chapterNumbers.has(chapterSection)) {
+          chapterIndex += 1
+          chapterNumbers.set(chapterSection, chapterIndex)
         }
 
-        if (line.includes('<div class="imageblock">')) {
-          blockContext = 'image'
-          continue
+        const effectiveChapter = chapterSection
+          ? chapterNumbers.get(chapterSection)
+          : 1
+
+        if (!countersByChapter.has(effectiveChapter)) {
+          countersByChapter.set(effectiveChapter, {
+            image: 0,
+            table: 0,
+            stem: 0
+          })
         }
 
-        if (line.includes('<table class="tableblock')) {
-          blockContext = 'table'
-          continue
-        }
-
-        if (line.includes('<div class="stemblock">')) {
-          blockContext = 'stem'
-          continue
-        }
-
-        if (blockContext === 'image' && line.includes('<div class="title">')) {
-          counters.image += 1
-          const effectiveChapter = chapter || 1
-          lines[i] = line.replace(
-            /<div class="title">.*?\.\s*/,
-            `<div class="title">${labels.image} ${effectiveChapter}-${counters.image}. `
+        const counters = countersByChapter.get(effectiveChapter)
+        counters[context] += 1
+        const numbering = `${effectiveChapter}-${counters[context]}`
+        if (context === 'stem') {
+          block.setTitle(
+            `${labels[context]} ${numbering}. ${block.getTitle() ?? ''}`.trim()
           )
-          blockContext = null
-          continue
-        }
-
-        if (
-          blockContext === 'table' &&
-          line.includes('<caption class="title">')
-        ) {
-          counters.table += 1
-          const effectiveChapter = chapter || 1
-          lines[i] = line.replace(
-            /<caption class="title">.*?\.\s*/,
-            `<caption class="title">${labels.table} ${effectiveChapter}-${counters.table}. `
-          )
-          blockContext = null
-          continue
-        }
-
-        if (blockContext === 'stem' && line.includes('<div class="title">')) {
-          counters.stem += 1
-          const effectiveChapter = chapter || 1
-          lines[i] = line.replace(
-            /<div class="title">/,
-            `<div class="title">${labels.stem} ${effectiveChapter}-${counters.stem}. `
-          )
-          blockContext = null
-          continue
+        } else {
+          block.setCaption(`${labels[context]} ${numbering}. `)
         }
       }
 
-      return lines.join('\n')
+      return document
     })
   })
 }
