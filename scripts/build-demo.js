@@ -289,8 +289,23 @@ const page = `<!doctype html>
         font: inherit;
       }
 
+      .control-row button {
+        padding: 0.4rem 0.7rem;
+        border-radius: 6px;
+        border: 1px solid #9ca3af;
+        background: #f9fafb;
+        font: inherit;
+        cursor: pointer;
+      }
+
       .preset-description {
         margin: 0.65rem 0 0;
+        color: #374151;
+      }
+
+      .share-status {
+        margin: 0.45rem 0 0;
+        font-size: 0.9rem;
         color: #374151;
       }
 
@@ -400,7 +415,9 @@ const page = `<!doctype html>
       <div class="control-row">
         <label for="preset-select"><strong>Preset</strong></label>
         <select id="preset-select" aria-label="Preset selector"></select>
+        <button id="share-button" type="button">Share</button>
       </div>
+      <p id="share-status" class="share-status"></p>
       <p id="preset-description" class="preset-description"></p>
       <div class="inputs-grid">
         <section class="input-panel">
@@ -438,8 +455,12 @@ const page = `<!doctype html>
       const sourceView = document.getElementById('source-view')
       const optionsView = document.getElementById('options-view')
       const headerView = document.getElementById('header-view')
+      const shareButton = document.getElementById('share-button')
+      const shareStatus = document.getElementById('share-status')
       const defaultPreview = document.getElementById('default-preview')
       const pluginPreview = document.getElementById('plugin-preview')
+
+      const URL_SIZE_LIMIT = 1800
 
       for (const preset of demoPresets) {
         const option = document.createElement('option')
@@ -460,11 +481,112 @@ const page = `<!doctype html>
         pluginPreview.innerHTML = preset.pluginHtml
       }
 
+      function readShareState() {
+        const selectedPreset = demoPresets.find((entry) => entry.id === presetSelect.value)
+        const options = selectedPreset?.options ?? {}
+        const labels = options.labels ?? {}
+        return {
+          source: sourceView.value,
+          chapterLevel: Number(options.chapterLevel ?? 1),
+          labels: {
+            image: labels.image ?? '',
+            table: labels.table ?? '',
+            stem: labels.stem ?? ''
+          }
+        }
+      }
+
+      function buildShareUrl(state) {
+        const params = new URLSearchParams()
+        params.set('src', state.source)
+        params.set('cl', String(state.chapterLevel))
+        params.set('li', state.labels.image)
+        params.set('lt', state.labels.table)
+        params.set('ls', state.labels.stem)
+        const query = params.toString()
+        return \`\${window.location.origin}\${window.location.pathname}?\${query}\`
+      }
+
+      async function copyShareUrl(url) {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(url)
+          return true
+        }
+        return false
+      }
+
+      function findPresetByShareState(state) {
+        return demoPresets.find((preset) => {
+          const labels = preset.options?.labels ?? {}
+          return (
+            preset.source === state.source &&
+            Number(preset.options?.chapterLevel ?? 1) === Number(state.chapterLevel) &&
+            labels.image === state.labels.image &&
+            labels.table === state.labels.table &&
+            labels.stem === state.labels.stem
+          )
+        })
+      }
+
+      function parseShareStateFromQuery() {
+        const params = new URLSearchParams(window.location.search)
+        if (!params.has('src')) {
+          return null
+        }
+
+        return {
+          source: params.get('src') ?? '',
+          chapterLevel: Number.parseInt(params.get('cl') ?? '1', 10),
+          labels: {
+            image: params.get('li') ?? '',
+            table: params.get('lt') ?? '',
+            stem: params.get('ls') ?? ''
+          }
+        }
+      }
+
       presetSelect.addEventListener('change', (event) => {
+        shareStatus.textContent = ''
         applyPreset(event.target.value)
       })
 
-      applyPreset(demoPresets[0]?.id)
+      shareButton.addEventListener('click', async () => {
+        const state = readShareState()
+        const shareUrl = buildShareUrl(state)
+
+        if (shareUrl.length > URL_SIZE_LIMIT) {
+          shareStatus.textContent =
+            'Share URL is too long. Reduce Asciidoc input size or switch to a shorter preset.'
+          return
+        }
+
+        try {
+          const copied = await copyShareUrl(shareUrl)
+          shareStatus.textContent = copied
+            ? 'Share URL copied to clipboard.'
+            : \`Share URL: \${shareUrl}\`
+        } catch (error) {
+          shareStatus.textContent = \`Share URL: \${shareUrl}\`
+        }
+      })
+
+      const initialShareState = parseShareStateFromQuery()
+      if (!initialShareState) {
+        applyPreset(demoPresets[0]?.id)
+      } else {
+        const preset = findPresetByShareState(initialShareState)
+        if (preset) {
+          presetSelect.value = preset.id
+          applyPreset(preset.id)
+          shareStatus.textContent =
+            'Loaded from shared query and re-rendered automatically.'
+        } else {
+          applyPreset(demoPresets[0]?.id)
+          sourceView.value = initialShareState.source
+          shareStatus.textContent =
+            'Query loaded. This static demo can only auto-render known preset combinations.'
+        }
+      }
     </script>
   </body>
 </html>
