@@ -86,6 +86,21 @@
         color: #b91c1c;
       }
 
+      .error-panel {
+        margin-top: 0.7rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #fca5a5;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.9rem;
+      }
+
+      .error-panel[hidden],
+      .debug-panel[hidden] {
+        display: none;
+      }
+
       .inputs-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -115,6 +130,31 @@
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 0.85rem;
         background: #ffffff;
+      }
+
+      .debug-panel {
+        margin-top: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #f9fafb;
+        padding: 0.6rem;
+      }
+
+      .debug-panel h3 {
+        margin: 0 0 0.4rem;
+        font-size: 0.95rem;
+      }
+
+      .debug-panel pre {
+        margin: 0;
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.82rem;
       }
 
       .preview-grid {
@@ -188,11 +228,15 @@
           <label for="preset-select"><strong>Preset</strong></label>
           <select id="preset-select" aria-label="Preset selector"></select>
           <button id="share-button" type="button">Share</button>
+          <button id="debug-toggle" type="button" aria-pressed="false">
+            Debug表示OFF
+          </button>
         </div>
         <p id="cdn-status" class="cdn-status"></p>
         <p id="render-status" class="render-status"></p>
         <p id="share-status" class="share-status"></p>
         <p id="preset-description" class="preset-description"></p>
+        <section id="error-panel" class="error-panel" hidden></section>
         <div class="inputs-grid">
           <section class="input-panel">
             <h3>Asciidoc source</h3>
@@ -207,6 +251,10 @@
             <textarea id="header-view"></textarea>
           </section>
         </div>
+        <section id="debug-panel" class="debug-panel" hidden>
+          <h3>Debug: effective settings</h3>
+          <pre id="debug-view"></pre>
+        </section>
       </section>
 
       <div class="preview-grid">
@@ -241,9 +289,13 @@
       const optionsView = document.getElementById('options-view')
       const headerView = document.getElementById('header-view')
       const shareButton = document.getElementById('share-button')
+      const debugToggle = document.getElementById('debug-toggle')
       const shareStatus = document.getElementById('share-status')
       const renderStatus = document.getElementById('render-status')
       const cdnStatus = document.getElementById('cdn-status')
+      const errorPanel = document.getElementById('error-panel')
+      const debugPanel = document.getElementById('debug-panel')
+      const debugView = document.getElementById('debug-view')
       const defaultPreview = document.getElementById('default-preview')
       const pluginPreview = document.getElementById('plugin-preview')
 
@@ -292,6 +344,72 @@
           attributes[key] = value
         }
         return attributes
+      }
+
+      function parsePositiveInteger(value) {
+        const parsed = Number.parseInt(String(value), 10)
+        if (!Number.isInteger(parsed) || parsed < 1) {
+          return null
+        }
+        return parsed
+      }
+
+      function validatePluginOptions(options) {
+        if (options.chapterLevel === undefined) {
+          return
+        }
+
+        const valid = parsePositiveInteger(options.chapterLevel)
+        if (valid === null) {
+          throw new Error('Invalid chapterLevel: must be an integer >= 1.')
+        }
+      }
+
+      function resolveEffectiveSettings(headers, options) {
+        const chapterCandidate =
+          options.chapterLevel ??
+          headers['numbered-captions-chapter-level'] ??
+          1
+        const chapterLevel = toValidChapterLevel(chapterCandidate, 1)
+
+        return {
+          chapterLevel,
+          labels: {
+            image:
+              options.labels?.image ?? headers['figure-caption'] ?? 'Figure',
+            table: options.labels?.table ?? headers['table-caption'] ?? 'Table',
+            stem:
+              options.labels?.stem ??
+              headers['equation-caption'] ??
+              headers['stem-caption'] ??
+              'Equation'
+          },
+          headerAttributes: headers
+        }
+      }
+
+      function updateDebugView(state) {
+        const effectiveSettings = resolveEffectiveSettings(
+          state.headers,
+          state.options
+        )
+        debugView.textContent = JSON.stringify(effectiveSettings, null, 2)
+      }
+
+      function setDebugVisible(visible) {
+        debugPanel.hidden = !visible
+        debugToggle.setAttribute('aria-pressed', String(visible))
+        debugToggle.textContent = visible ? 'Debug表示ON' : 'Debug表示OFF'
+      }
+
+      function showErrorPanel(message) {
+        errorPanel.textContent = message
+        errorPanel.hidden = false
+      }
+
+      function hideErrorPanel() {
+        errorPanel.hidden = true
+        errorPanel.textContent = ''
       }
 
       function buildDemoPluginRegister(options = {}) {
@@ -378,20 +496,33 @@
           throw new Error('Asciidoctor CDN load failed.')
         }
 
+        validatePluginOptions(pluginOptions)
+
         const asciidoctor = window.Asciidoctor()
         const baseConvertOptions = {
           safe: 'safe',
           attributes: headerAttributes
         }
 
-        const defaultHtml = asciidoctor.convert(source, baseConvertOptions)
+        let defaultHtml
+        try {
+          defaultHtml = asciidoctor.convert(source, baseConvertOptions)
+        } catch (error) {
+          throw new Error(`Default convert failed: ${error.message}`)
+        }
 
         const registry = asciidoctor.Extensions.create()
         buildDemoPluginRegister(pluginOptions)(registry)
-        const pluginHtml = asciidoctor.convert(source, {
-          ...baseConvertOptions,
-          extension_registry: registry
-        })
+
+        let pluginHtml
+        try {
+          pluginHtml = asciidoctor.convert(source, {
+            ...baseConvertOptions,
+            extension_registry: registry
+          })
+        } catch (error) {
+          throw new Error(`Plugin convert failed: ${error.message}`)
+        }
 
         return { defaultHtml, pluginHtml }
       }
@@ -422,6 +553,7 @@
       function renderNow() {
         try {
           const state = readState()
+          updateDebugView(state)
           const { defaultHtml, pluginHtml } = renderWithAsciidoctor(
             state.source,
             state.headers,
@@ -431,9 +563,11 @@
           pluginPreview.innerHTML = pluginHtml
           renderStatus.textContent = `Rendered with ${DEBOUNCE_MS}ms debounce.`
           renderStatus.dataset.error = 'false'
+          hideErrorPanel()
         } catch (error) {
           renderStatus.textContent = error.message
           renderStatus.dataset.error = 'true'
+          showErrorPanel(error.message)
           showFallbackPreview()
         }
       }
@@ -517,6 +651,11 @@
         })
       }
 
+      debugToggle.addEventListener('click', () => {
+        const nextVisible = debugPanel.hidden
+        setDebugVisible(nextVisible)
+      })
+
       shareButton.addEventListener('click', async () => {
         try {
           const state = readState()
@@ -550,6 +689,7 @@
 
       window.addEventListener('DOMContentLoaded', () => {
         populatePresetOptions()
+        setDebugVisible(false)
 
         const shared = parseShareStateFromQuery()
         if (shared) {
