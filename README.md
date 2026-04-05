@@ -4,6 +4,8 @@
 
 An Asciidoctor.js extension plugin that includes chapter numbers in figure, table, and equation captions.
 
+Demo: https://yoshihideshirai.github.io/asciidoctor-numbered-captions/
+
 Examples:
 
 - Figure `1-1`

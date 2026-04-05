@@ -4,6 +4,8 @@
 
 Asciidoctor.js の拡張プラグインです。図・表・式のキャプション番号にチャプター番号を含めます。
 
+デモ: https://yoshihideshirai.github.io/asciidoctor-numbered-captions/
+
 例:
 
 - Figure `1-1`
