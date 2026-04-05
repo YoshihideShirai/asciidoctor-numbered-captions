@@ -183,3 +183,6 @@ After deployment, verify the demo page with these points:
 - Numbering resets when chapter changes.
 - Changing `chapterLevel` (for example from `1` to `2`) updates the chapter unit used for caption numbering.
 - Content outside configured chapter sections is treated as chapter `1` as expected.
+- **Error panel / invalid Asciidoc**: enter intentionally broken Asciidoc (for example, an invalid block macro syntax) and confirm the error message is displayed in the on-screen error panel.
+- **Error panel / invalid `chapterLevel`**: set `options` JSON to `{"chapterLevel": 0}` (or a non-integer such as `"abc"`) and confirm `Invalid chapterLevel: must be an integer >= 1.` is shown.
+- Toggle **Debug表示ON/OFF** and confirm the debug section shows current effective settings as JSON (`chapterLevel`, `labels`, `headerAttributes`).
