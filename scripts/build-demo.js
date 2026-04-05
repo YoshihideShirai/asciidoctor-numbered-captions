@@ -179,6 +179,181 @@ image::https://dummyimage.com/420x120/e0f2fe/111827.png&text=Unit+B-1[Demo image
         stem: 'Equation'
       }
     }
+  },
+  {
+    id: 'preamble-and-reset',
+    name: 'Preamble + reset',
+    description:
+      'Shows preamble content treated as chapter 1, then per-target counters continuing/resetting across later chapters.',
+    source: `= Preamble and reset demo
+
+.Preamble figure before any chapter
+image::https://dummyimage.com/420x120/fef3c7/111827.png&text=Preamble[Demo image,420,120]
+
+== Chapter One
+
+.First figure in chapter one
+image::https://dummyimage.com/420x120/dcfce7/111827.png&text=Chapter+1+Figure+1[Demo image,420,120]
+
+.Second figure in chapter one
+image::https://dummyimage.com/420x120/bbf7d0/111827.png&text=Chapter+1+Figure+2[Demo image,420,120]
+
+.Table in chapter one
+|===
+|Metric |Value
+
+|requests |128
+|errors |0
+|===
+
+== Chapter Two
+
+.Equation in chapter two
+[stem]
++++
+f(x) = x^3 - 2x + 1
++++
+
+.Figure in chapter two
+image::https://dummyimage.com/420x120/fee2e2/111827.png&text=Chapter+2+Figure+1[Demo image,420,120]
+
+.Table in chapter two
+|===
+|Metric |Value
+
+|requests |256
+|errors |3
+|===`,
+    headerAttributes: {
+      sectnums: '',
+      stem: 'latexmath',
+      'numbered-captions-chapter-level': '1'
+    },
+    options: {
+      labels: {
+        image: 'Figure',
+        table: 'Table',
+        stem: 'Equation'
+      }
+    }
+  },
+  {
+    id: 'header-attributes-only',
+    name: 'Header attrs only',
+    description:
+      'Enables chaptered numbering using only Asciidoc header attributes, including standard caption label attributes.',
+    source: `= Header attributes only demo
+:numbered-captions-chapter-level: 1
+:figure-caption: Diagram
+:table-caption: Matrix
+:equation-caption: Formula
+
+== Overview
+
+.Architecture sketch
+image::https://dummyimage.com/420x120/e0e7ff/111827.png&text=Architecture[Demo image,420,120]
+
+.Input mapping
+|===
+|Source |Destination
+
+|queue |worker
+|worker |store
+|===
+
+.Scoring rule
+[stem]
++++
+score = \\frac{passed}{total}
++++
+
+== Details
+
+.Sequence sketch
+image::https://dummyimage.com/420x120/fce7f3/111827.png&text=Sequence[Demo image,420,120]
+
+.Retry matrix
+|===
+|Attempt |Delay
+
+|1 |0s
+|2 |5s
+|===`,
+    headerAttributes: {
+      sectnums: '',
+      stem: 'latexmath',
+      'numbered-captions-chapter-level': '1',
+      'figure-caption': 'Diagram',
+      'table-caption': 'Matrix',
+      'equation-caption': 'Formula'
+    },
+    options: {}
+  },
+  {
+    id: 'custom-listing-target',
+    name: 'Custom listing target',
+    description:
+      'Demonstrates extending the plugin to number source listings alongside the built-in figure/table/stem targets.',
+    source: `= Custom listing target demo
+
+== Pipeline
+
+.Worker bootstrap
+[source,javascript]
+----
+function startWorker(queue) {
+  return queue.connect({ retry: 3 })
+}
+----
+
+.Pipeline figure
+image::https://dummyimage.com/420x120/dbeafe/111827.png&text=Pipeline[Demo image,420,120]
+
+.Configuration table
+|===
+|Key |Value
+
+|retry |3
+|timeout |5000
+|===
+
+== Verification
+
+.Assertion example
+[source,javascript]
+----
+assert.equal(result.status, 'ok')
+----
+
+.Expectation formula
+[stem]
++++
+latency_{avg} < 100ms
++++`,
+    headerAttributes: {
+      sectnums: '',
+      stem: 'latexmath',
+      'listing-caption': 'Listing'
+    },
+    options: {
+      chapterLevel: 1,
+      labels: {
+        image: 'Figure',
+        table: 'Table',
+        stem: 'Equation',
+        listing: 'Listing'
+      },
+      targets: {
+        image: true,
+        table: true,
+        stem: true,
+        listing: {
+          context: 'listing',
+          labelAttribute: 'listing-caption',
+          counter: 'listing'
+        }
+      }
+    }
   }
 ]
 
