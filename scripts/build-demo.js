@@ -424,6 +424,16 @@ const asciidoctorBrowserPath = path.join(
   'asciidoctor.js'
 )
 const asciidoctorVendorPath = path.join(vendorDir, 'asciidoctor.js')
+const asciidoctorStylesheetPath = path.join(
+  process.cwd(),
+  'node_modules',
+  '@asciidoctor',
+  'core',
+  'dist',
+  'css',
+  'asciidoctor.css'
+)
+const asciidoctorStylesheetVendorPath = path.join(vendorDir, 'asciidoctor.css')
 
 fs.mkdirSync(outDir, { recursive: true })
 fs.mkdirSync(vendorDir, { recursive: true })
@@ -434,6 +444,7 @@ const page = `<!doctype html>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>asciidoctor-numbered-captions demo</title>
+    <link rel="stylesheet" href="./vendor/asciidoctor.css" />
     <style>
       :root {
         color-scheme: light;
@@ -573,45 +584,6 @@ const page = `<!doctype html>
         overflow-x: auto;
       }
 
-      .preview-body img {
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-      }
-
-      .preview-body table {
-        border-collapse: collapse;
-      }
-
-      .preview-body th,
-      .preview-body td {
-        border: 1px solid #d1d5db;
-        padding: 0.4rem 0.6rem;
-      }
-
-      .preview-body .imageblock > .title,
-      .preview-body .stemblock > .title,
-      .preview-body table.tableblock > caption.title {
-        color: #7a2518;
-        font-size: 1em;
-        font-weight: bold;
-        text-align: left;
-        line-height: 1.45;
-        margin-top: 0;
-        margin-left: 0;
-        margin-right: 0;
-      }
-
-      .preview-body .imageblock > .title,
-      .preview-body .stemblock > .title {
-        margin-bottom: 0.5em;
-      }
-
-      .preview-body table.tableblock > caption.title {
-        margin-top: 0.5em;
-        margin-bottom: 0.5em;
-        display: table-caption;
-        caption-side: top;
-      }
 
       @media (max-width: 1080px) {
         .inputs-grid {
@@ -1382,10 +1354,12 @@ async function writeFormattedDemoAssets() {
   fs.writeFileSync(indexPath, pageWithTrailingNewline)
   fs.writeFileSync(presetsPath, presetsWithTrailingNewline)
   fs.copyFileSync(asciidoctorBrowserPath, asciidoctorVendorPath)
+  fs.copyFileSync(asciidoctorStylesheetPath, asciidoctorStylesheetVendorPath)
 
   console.log(`Demo site generated: ${indexPath}`)
   console.log(`Preset module generated: ${presetsPath}`)
   console.log(`Vendor runtime copied: ${asciidoctorVendorPath}`)
+  console.log(`Vendor stylesheet copied: ${asciidoctorStylesheetVendorPath}`)
 }
 
 writeFormattedDemoAssets().catch((error) => {
