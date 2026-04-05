@@ -57,6 +57,7 @@ image::sample.png[]
 
 ```adoc
 = Document
+:numbered-captions-numbering: plugin
 :numbered-captions-chapter-level: 1
 :figure-caption: 図
 :table-caption: 表
@@ -72,6 +73,12 @@ image::sample.png[]
 - stem: `:equation-caption:`（または `:stem-caption:`）
 
 デフォルトではこの拡張は無効のままで、Asciidoctor標準のナンバリングが使われます。Asciidocヘッダー属性またはJS optionsを指定した場合にのみ、この拡張の挙動が有効になります。
+
+- `defaultNumbering`（デフォルト: 未指定）
+  - 同じ extension registry で処理する全ドキュメントに対する既定の採番方式。
+  - `plugin`: このプラグインの採番を有効化。
+  - `asciidoctor`: Asciidoctor標準の採番を強制。
+  - ドキュメントごとに `:numbered-captions-numbering:`（`plugin` / `asciidoctor`）を指定すると、`defaultNumbering` より優先されます。
 
 - `chapterLevel` (default: `1`)
   - どのセクションレベルをチャプターとして扱うか（`1` = `==`, `2` = `===`, ...）。

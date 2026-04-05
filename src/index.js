@@ -8,11 +8,17 @@ const DEFAULT_LABELS = {
 
 const ATTRIBUTE_NAMES = {
   chapterLevel: 'numbered-captions-chapter-level',
+  numbering: 'numbered-captions-numbering',
   standardLabels: {
     image: 'figure-caption',
     table: 'table-caption',
     stem: ['equation-caption', 'stem-caption']
   }
+}
+
+const NUMBERING_MODES = {
+  plugin: 'plugin',
+  asciidoctor: 'asciidoctor'
 }
 
 const RESERVED_TARGET_OPTIONS = new Set(['onUnknown'])
@@ -40,7 +46,7 @@ function firstDocumentAttribute(document, names = []) {
 }
 
 function hasAnyHeaderAttribute(document) {
-  return [ATTRIBUTE_NAMES.chapterLevel].some(
+  return [ATTRIBUTE_NAMES.chapterLevel, ATTRIBUTE_NAMES.numbering].some(
     (name) => document.getAttribute(name) !== undefined
   )
 }
@@ -48,11 +54,27 @@ function hasAnyHeaderAttribute(document) {
 function hasAnyOptions(options) {
   return (
     options.chapterLevel !== undefined ||
+    options.defaultNumbering !== undefined ||
     options.targets !== undefined ||
     options.labels?.image !== undefined ||
     options.labels?.table !== undefined ||
     options.labels?.stem !== undefined
   )
+}
+
+function normalizeNumberingMode(value) {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+
+  const normalized = String(value).trim().toLowerCase()
+  if (normalized === NUMBERING_MODES.plugin) {
+    return NUMBERING_MODES.plugin
+  }
+  if (normalized === NUMBERING_MODES.asciidoctor) {
+    return NUMBERING_MODES.asciidoctor
+  }
+  return undefined
 }
 
 function resolveChapterSection(block, chapterLevel) {
@@ -264,8 +286,19 @@ function resolveTargets(optionTargets) {
 function register(registry, options = {}) {
   registry.treeProcessor(function () {
     this.process(function (document) {
+      const numberingMode = firstDefined(
+        normalizeNumberingMode(document.getAttribute(ATTRIBUTE_NAMES.numbering)),
+        normalizeNumberingMode(options.defaultNumbering)
+      )
+
+      if (numberingMode === NUMBERING_MODES.asciidoctor) {
+        return document
+      }
+
       const pluginEnabled =
-        hasAnyOptions(options) || hasAnyHeaderAttribute(document)
+        numberingMode === NUMBERING_MODES.plugin ||
+        hasAnyOptions(options) ||
+        hasAnyHeaderAttribute(document)
 
       if (!pluginEnabled) {
         return document
