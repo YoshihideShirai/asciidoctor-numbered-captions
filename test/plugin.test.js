@@ -21,7 +21,7 @@ function convertWithPlugin(source, options = {}) {
 }
 
 function extractNumbering(html, label) {
-  return [...html.matchAll(new RegExp(`${label} (\\d+-\\d+)\\.`, 'g'))].map(
+  return [...html.matchAll(new RegExp(`${label} ([\\d.]+-\\d+)\\.`, 'g'))].map(
     ([, numbering]) => numbering
   )
 }
@@ -193,7 +193,7 @@ image::one.png[]
   assert.deepEqual(extractNumbering(html, '図'), [])
 })
 
-test('supports chapterLevel=2 from JS options', () => {
+test('supports chapterLevel=2 from JS options with section-based chapter numbering', () => {
   const input = `= Sample
 
 == Part One
@@ -222,11 +222,11 @@ image::two.png[]
     }
   })
 
-  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '2-1'])
-  assert.deepEqual(extractNumbering(html, 'Table'), ['1-1'])
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '1.2-1'])
+  assert.deepEqual(extractNumbering(html, 'Table'), ['1.1-1'])
 })
 
-test('supports chapterLevel=2 from Asciidoc header attributes', () => {
+test('supports chapterLevel=2 from Asciidoc header attributes with section-based chapter numbering', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 2
 
@@ -245,7 +245,7 @@ image::two.png[]
 
   const html = convertWithPlugin(input)
 
-  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '2-1'])
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '1.2-1'])
 })
 
 test('treats preamble captions as chapter 1 and keeps numbering continuous into first chapter', () => {

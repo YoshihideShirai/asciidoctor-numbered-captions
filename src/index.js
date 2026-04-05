@@ -78,6 +78,28 @@ function resolveEffectiveChapter(chapterSection, chapterNumbers) {
   return chapterNumbers.get(chapterSection)
 }
 
+function resolveChapterNumber(chapterSection, fallbackNumber) {
+  if (!chapterSection) {
+    return '1'
+  }
+
+  const numerals = []
+  let node = chapterSection
+  while (node && node.getContext?.() === 'section') {
+    const numeral = node.getNumeral?.()
+    if (typeof numeral === 'string' && numeral.length > 0) {
+      numerals.push(numeral)
+    }
+    node = node.getParent?.()
+  }
+
+  if (numerals.length > 0) {
+    return numerals.reverse().join('.')
+  }
+
+  return String(fallbackNumber)
+}
+
 function createContextMatcher(context, titled = true) {
   return (node) => {
     if (node.getContext?.() !== context) {
@@ -297,15 +319,19 @@ function register(registry, options = {}) {
           chapterSection,
           chapterNumbers
         )
+        const chapterNumber = resolveChapterNumber(
+          chapterSection,
+          effectiveChapter
+        )
 
-        if (!countersByChapter.has(effectiveChapter)) {
-          countersByChapter.set(effectiveChapter, {})
+        if (!countersByChapter.has(chapterNumber)) {
+          countersByChapter.set(chapterNumber, {})
         }
 
-        const counters = countersByChapter.get(effectiveChapter)
+        const counters = countersByChapter.get(chapterNumber)
         const counterKey = target.counterKey
         counters[counterKey] = (counters[counterKey] ?? 0) + 1
-        const numbering = `${effectiveChapter}-${counters[counterKey]}`
+        const numbering = `${chapterNumber}-${counters[counterKey]}`
 
         target.apply(block, labels[targetName], numbering)
       }

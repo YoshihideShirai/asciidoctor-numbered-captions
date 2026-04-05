@@ -9,6 +9,7 @@ Examples:
 - Figure `1-1`
 - Table `2-3`
 - Equation `4-2`
+- (with nested sections) Figure `1.2-1`
 
 ## Installation
 
@@ -118,7 +119,7 @@ numberedCaptions.register(registry, {
 })
 ```
 
-With Asciidoc nested sections and `chapterLevel: 2`, captions are numbered by each `===` section.
+With Asciidoc nested sections and `chapterLevel: 2`, captions use section-based chapter numbering (for example `1.2-1` for the first figure in section `1.2`).
 
 If no section exists at the configured `chapterLevel`, captions are treated as chapter `1` (for example: preamble-only content or documents without chapter headings).
 
