@@ -163,6 +163,14 @@ After adding `.github/workflows/pages.yml`, switch the repository Pages source t
 3. In **Build and deployment**, set **Source** to **GitHub Actions**.
 4. Push to `main` (or run the workflow manually) and confirm deployment succeeds in the **Actions** tab.
 
+## Lighthouse quick-check points
+
+When validating demo updates locally (especially `docs/index.html`), run a quick Lighthouse pass and verify:
+
+- **Mobile layout stability**: no overlapping/overflow on narrow screens; the page switches from wide-screen 2-column to stacked layout cleanly.
+- **Interaction latency**: typing in source/options/header textareas remains responsive (rendering is debounced at ~300ms to reduce heavy re-renders).
+- **CDN failure UX**: when external CDN assets fail, a fallback status message is visible and known preset previews remain readable.
+
 ## Demo verification checklist
 
 After deployment, verify the demo page with these points:
