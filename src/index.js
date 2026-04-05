@@ -8,11 +8,22 @@ const DEFAULT_LABELS = {
 
 const ATTRIBUTE_NAMES = {
   chapterLevel: 'numbered-captions-chapter-level',
+  numbering: 'numbered-captions-numbering',
   standardLabels: {
     image: 'figure-caption',
     table: 'table-caption',
     stem: ['equation-caption', 'stem-caption']
   }
+}
+
+const NUMBERING_MODES = {
+  chaptered: 'chaptered',
+  standard: 'standard'
+}
+
+const NUMBERING_MODE_ALIASES = {
+  plugin: NUMBERING_MODES.chaptered,
+  asciidoctor: NUMBERING_MODES.standard
 }
 
 const RESERVED_TARGET_OPTIONS = new Set(['onUnknown'])
@@ -53,6 +64,24 @@ function hasAnyOptions(options) {
     options.labels?.table !== undefined ||
     options.labels?.stem !== undefined
   )
+}
+
+function normalizeNumberingMode(value) {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+
+  const normalized = String(value).trim().toLowerCase()
+  if (normalized === NUMBERING_MODES.chaptered) {
+    return NUMBERING_MODES.chaptered
+  }
+  if (normalized === NUMBERING_MODES.standard) {
+    return NUMBERING_MODES.standard
+  }
+  if (NUMBERING_MODE_ALIASES[normalized]) {
+    return NUMBERING_MODE_ALIASES[normalized]
+  }
+  return undefined
 }
 
 function resolveChapterSection(block, chapterLevel) {
@@ -264,8 +293,21 @@ function resolveTargets(optionTargets) {
 function register(registry, options = {}) {
   registry.treeProcessor(function () {
     this.process(function (document) {
+      const numberingMode = firstDefined(
+        normalizeNumberingMode(
+          document.getAttribute(ATTRIBUTE_NAMES.numbering)
+        ),
+        normalizeNumberingMode(options.defaultNumbering)
+      )
+
+      if (numberingMode === NUMBERING_MODES.standard) {
+        return document
+      }
+
       const pluginEnabled =
-        hasAnyOptions(options) || hasAnyHeaderAttribute(document)
+        numberingMode === NUMBERING_MODES.chaptered ||
+        hasAnyOptions(options) ||
+        hasAnyHeaderAttribute(document)
 
       if (!pluginEnabled) {
         return document

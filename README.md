@@ -57,6 +57,7 @@ Header attribute example (Asciidoc):
 
 ```adoc
 = Document
+:numbered-captions-numbering: chaptered
 :numbered-captions-chapter-level: 1
 :figure-caption: Figure
 :table-caption: Table
@@ -72,6 +73,13 @@ This extension uses Asciidoctor standard caption attributes:
 - stem: `:equation-caption:` (or `:stem-caption:`)
 
 By default, this extension stays inactive and Asciidoctor standard numbering is used. The extension behavior is enabled when either header attributes or JS options are provided.
+
+- `defaultNumbering` (default: not set)
+  - Default numbering mode for all documents in the current extension registry.
+  - `chaptered`: enable chapter-prefixed numbering from this extension.
+  - `standard`: force Asciidoctor standard numbering.
+  - Backward-compatible aliases: `plugin` = `chaptered`, `asciidoctor` = `standard`.
+  - Per-document header attribute `:numbered-captions-numbering:` (`chaptered` or `standard`) takes precedence over `defaultNumbering`.
 
 - `chapterLevel` (default: `1`)
   - Section level treated as chapter (`1` = `==`, `2` = `===`, ...).

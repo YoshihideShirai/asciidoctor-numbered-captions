@@ -41,6 +41,130 @@ image::one.png[]
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
+test('uses chaptered numbering when defaultNumbering=chaptered is set in options', () => {
+  const input = `= Sample
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'chaptered' })
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
+})
+
+test('uses standard numbering when defaultNumbering=standard is set in options', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 1
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'standard' })
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
+test('allows header attribute to force chaptered numbering', () => {
+  const input = `= Sample
+:numbered-captions-numbering: chaptered
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'standard' })
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
+})
+
+test('allows header attribute to force standard numbering', () => {
+  const input = `= Sample
+:numbered-captions-numbering: standard
+:numbered-captions-chapter-level: 1
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'chaptered' })
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
+test('keeps supporting plugin as an alias of chaptered numbering', () => {
+  const input = `= Sample
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'plugin' })
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
+})
+
+test('keeps supporting asciidoctor as an alias of standard numbering', () => {
+  const input = `= Sample
+:numbered-captions-numbering: asciidoctor
+:numbered-captions-chapter-level: 1
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
+test('ignores invalid defaultNumbering values without enabling plugin numbering', () => {
+  const input = `= Sample
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'invalid-mode' })
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
+test('ignores invalid numbering header values without enabling plugin numbering', () => {
+  const input = `= Sample
+:numbered-captions-numbering: invalid-mode
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
 test('numbers image/table/equation captions as chapter-counter from header attributes', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
