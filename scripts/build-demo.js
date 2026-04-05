@@ -484,6 +484,12 @@ const page = `<!doctype html>
         color: #374151;
       }
 
+      .math-status {
+        margin: 0.35rem 0 0;
+        font-size: 0.9rem;
+        color: #374151;
+      }
+
       .inputs-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -593,6 +599,7 @@ const page = `<!doctype html>
         <button id="share-button" type="button">Share</button>
       </div>
       <p id="share-status" class="share-status"></p>
+      <p id="math-status" class="math-status"></p>
       <p id="preset-description" class="preset-description"></p>
       <div class="inputs-grid">
         <section class="input-panel">
@@ -623,6 +630,16 @@ const page = `<!doctype html>
 
     <script src="./demo-presets.js"></script>
     <script>
+      window.MathJax = {
+        tex: {
+          displayMath: [['\\\\[', '\\\\]']],
+          inlineMath: [['\\\\(', '\\\\)']]
+        },
+        options: {
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      }
+
       const demoPresets = window.demoPresets || []
 
       const presetSelect = document.getElementById('preset-select')
@@ -632,10 +649,54 @@ const page = `<!doctype html>
       const headerView = document.getElementById('header-view')
       const shareButton = document.getElementById('share-button')
       const shareStatus = document.getElementById('share-status')
+      const mathStatus = document.getElementById('math-status')
       const defaultPreview = document.getElementById('default-preview')
       const pluginPreview = document.getElementById('plugin-preview')
 
       const URL_SIZE_LIMIT = 1800
+      let mathJaxReady = false
+
+      function setMathStatus(message) {
+        mathStatus.textContent = message
+      }
+
+      function loadMathJax() {
+        setMathStatus('Loading MathJax for latexmath rendering...')
+
+        const script = document.createElement('script')
+        script.src =
+          'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+        script.async = true
+        script.addEventListener('load', () => {
+          mathJaxReady = true
+          setMathStatus('latexmath rendering is enabled.')
+          renderMath()
+        })
+        script.addEventListener('error', () => {
+          setMathStatus(
+            'MathJax failed to load from CDN. Falling back to raw latexmath source.'
+          )
+        })
+        document.head.append(script)
+      }
+
+      function renderMath() {
+        if (!mathJaxReady || !window.MathJax?.typesetPromise) {
+          return
+        }
+
+        if (window.MathJax.typesetClear) {
+          window.MathJax.typesetClear([defaultPreview, pluginPreview])
+        }
+
+        window.MathJax.typesetPromise([defaultPreview, pluginPreview]).catch(
+          () => {
+            setMathStatus(
+              'MathJax loaded, but some expressions could not be rendered.'
+            )
+          }
+        )
+      }
 
       for (const preset of demoPresets) {
         const option = document.createElement('option')
@@ -654,6 +715,7 @@ const page = `<!doctype html>
 
         defaultPreview.innerHTML = preset.defaultHtml
         pluginPreview.innerHTML = preset.pluginHtml
+        renderMath()
       }
 
       function readShareState() {
@@ -762,6 +824,8 @@ const page = `<!doctype html>
             'Query loaded. This static demo can only auto-render known preset combinations.'
         }
       }
+
+      loadMathJax()
     </script>
   </body>
 </html>
