@@ -67,7 +67,7 @@ globalThis.demoPresets = [
     headerAttributes: {
       sectnums: '',
       stem: 'latexmath',
-      'numbered-captions-chapter-level': '1'
+      'numbered-captions-chapter-level': '2'
     },
     options: {
       chapterLevel: 2,
@@ -78,7 +78,7 @@ globalThis.demoPresets = [
       }
     },
     headerAttributesText:
-      ':sectnums:\n:stem: latexmath\n:numbered-captions-chapter-level: 1',
+      ':sectnums:\n:stem: latexmath\n:numbered-captions-chapter-level: 2',
     optionsText:
       '{\n  "chapterLevel": 2,\n  "labels": {\n    "image": "Figure",\n    "table": "Table",\n    "stem": "Equation"\n  }\n}',
     defaultHtml:
