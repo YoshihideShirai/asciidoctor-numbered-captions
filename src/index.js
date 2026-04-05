@@ -17,8 +17,13 @@ const ATTRIBUTE_NAMES = {
 }
 
 const NUMBERING_MODES = {
-  plugin: 'plugin',
-  asciidoctor: 'asciidoctor'
+  chaptered: 'chaptered',
+  standard: 'standard'
+}
+
+const NUMBERING_MODE_ALIASES = {
+  plugin: NUMBERING_MODES.chaptered,
+  asciidoctor: NUMBERING_MODES.standard
 }
 
 const RESERVED_TARGET_OPTIONS = new Set(['onUnknown'])
@@ -67,11 +72,14 @@ function normalizeNumberingMode(value) {
   }
 
   const normalized = String(value).trim().toLowerCase()
-  if (normalized === NUMBERING_MODES.plugin) {
-    return NUMBERING_MODES.plugin
+  if (normalized === NUMBERING_MODES.chaptered) {
+    return NUMBERING_MODES.chaptered
   }
-  if (normalized === NUMBERING_MODES.asciidoctor) {
-    return NUMBERING_MODES.asciidoctor
+  if (normalized === NUMBERING_MODES.standard) {
+    return NUMBERING_MODES.standard
+  }
+  if (NUMBERING_MODE_ALIASES[normalized]) {
+    return NUMBERING_MODE_ALIASES[normalized]
   }
   return undefined
 }
@@ -292,12 +300,12 @@ function register(registry, options = {}) {
         normalizeNumberingMode(options.defaultNumbering)
       )
 
-      if (numberingMode === NUMBERING_MODES.asciidoctor) {
+      if (numberingMode === NUMBERING_MODES.standard) {
         return document
       }
 
       const pluginEnabled =
-        numberingMode === NUMBERING_MODES.plugin ||
+        numberingMode === NUMBERING_MODES.chaptered ||
         hasAnyOptions(options) ||
         hasAnyHeaderAttribute(document)
 
