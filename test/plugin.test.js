@@ -103,6 +103,37 @@ image::one.png[]
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
+test('ignores invalid defaultNumbering values without enabling plugin numbering', () => {
+  const input = `= Sample
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'invalid-mode' })
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
+test('ignores invalid numbering header values without enabling plugin numbering', () => {
+  const input = `= Sample
+:numbered-captions-numbering: invalid-mode
+
+== Chapter One
+
+.Figure One
+image::one.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.match(html, /Figure 1\. Figure One/)
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
 test('numbers image/table/equation captions as chapter-counter from header attributes', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1

@@ -46,7 +46,7 @@ function firstDocumentAttribute(document, names = []) {
 }
 
 function hasAnyHeaderAttribute(document) {
-  return [ATTRIBUTE_NAMES.chapterLevel, ATTRIBUTE_NAMES.numbering].some(
+  return [ATTRIBUTE_NAMES.chapterLevel].some(
     (name) => document.getAttribute(name) !== undefined
   )
 }
@@ -54,7 +54,6 @@ function hasAnyHeaderAttribute(document) {
 function hasAnyOptions(options) {
   return (
     options.chapterLevel !== undefined ||
-    options.defaultNumbering !== undefined ||
     options.targets !== undefined ||
     options.labels?.image !== undefined ||
     options.labels?.table !== undefined ||
@@ -287,7 +286,9 @@ function register(registry, options = {}) {
   registry.treeProcessor(function () {
     this.process(function (document) {
       const numberingMode = firstDefined(
-        normalizeNumberingMode(document.getAttribute(ATTRIBUTE_NAMES.numbering)),
+        normalizeNumberingMode(
+          document.getAttribute(ATTRIBUTE_NAMES.numbering)
+        ),
         normalizeNumberingMode(options.defaultNumbering)
       )
 
