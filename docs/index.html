@@ -66,10 +66,23 @@
         color: #374151;
       }
 
+      .render-status {
+        margin: 0.35rem 0 0;
+        font-size: 0.9rem;
+        color: #374151;
+      }
+
       .math-status {
         margin: 0.35rem 0 0;
         font-size: 0.9rem;
         color: #374151;
+      }
+
+      .error-status {
+        margin: 0.35rem 0 0;
+        font-size: 0.9rem;
+        color: #b91c1c;
+        white-space: pre-wrap;
       }
 
       .inputs-grid {
@@ -179,23 +192,26 @@
       <div class="control-row">
         <label for="preset-select"><strong>Preset</strong></label>
         <select id="preset-select" aria-label="Preset selector"></select>
+        <button id="reset-button" type="button">Reset</button>
         <button id="share-button" type="button">Share</button>
       </div>
       <p id="share-status" class="share-status"></p>
+      <p id="render-status" class="render-status"></p>
       <p id="math-status" class="math-status"></p>
+      <p id="error-status" class="error-status"></p>
       <p id="preset-description" class="preset-description"></p>
       <div class="inputs-grid">
         <section class="input-panel">
           <h3>Asciidoc source</h3>
-          <textarea id="source-view" readonly></textarea>
+          <textarea id="source-view"></textarea>
         </section>
         <section class="input-panel">
           <h3>Plugin options</h3>
-          <textarea id="options-view" readonly></textarea>
+          <textarea id="options-view"></textarea>
         </section>
         <section class="input-panel">
           <h3>Header attributes</h3>
-          <textarea id="header-view" readonly></textarea>
+          <textarea id="header-view"></textarea>
         </section>
       </div>
     </section>
@@ -212,7 +228,9 @@
     </div>
 
     <script src="./demo-presets.js"></script>
-    <script>
+    <script type="module">
+      import Asciidoctor from './vendor/asciidoctor.js'
+
       window.MathJax = {
         tex: {
           displayMath: [['\\[', '\\]']],
@@ -237,17 +255,419 @@
       const sourceView = document.getElementById('source-view')
       const optionsView = document.getElementById('options-view')
       const headerView = document.getElementById('header-view')
+      const resetButton = document.getElementById('reset-button')
       const shareButton = document.getElementById('share-button')
       const shareStatus = document.getElementById('share-status')
+      const renderStatus = document.getElementById('render-status')
       const mathStatus = document.getElementById('math-status')
+      const errorStatus = document.getElementById('error-status')
       const defaultPreview = document.getElementById('default-preview')
       const pluginPreview = document.getElementById('plugin-preview')
 
-      const URL_SIZE_LIMIT = 1800
+      const URL_SIZE_LIMIT = 5000
+      const RENDER_DEBOUNCE_MS = 300
       let mathJaxReady = false
+      let renderTimer = null
+      const asciidoctor = Asciidoctor()
+
+      const DEFAULT_LABELS = {
+        image: 'Figure',
+        table: 'Table',
+        stem: 'Equation'
+      }
+
+      const ATTRIBUTE_NAMES = {
+        chapterLevel: 'numbered-captions-chapter-level',
+        numbering: 'numbered-captions-numbering',
+        standardLabels: {
+          image: 'figure-caption',
+          table: 'table-caption',
+          stem: ['equation-caption', 'stem-caption']
+        }
+      }
+
+      const NUMBERING_MODES = {
+        chaptered: 'chaptered',
+        standard: 'standard'
+      }
+
+      const NUMBERING_MODE_ALIASES = {
+        plugin: NUMBERING_MODES.chaptered,
+        asciidoctor: NUMBERING_MODES.standard
+      }
+
+      const RESERVED_TARGET_OPTIONS = new Set(['onUnknown'])
+
+      function firstDefined(...values) {
+        return values.find((value) => value !== undefined && value !== null)
+      }
+
+      function toValidChapterLevel(value, fallback = 1) {
+        const parsed = Number.parseInt(String(value), 10)
+        if (!Number.isInteger(parsed) || parsed < 1) {
+          return fallback
+        }
+        return parsed
+      }
+
+      function normalizeNumberingMode(value) {
+        if (value === undefined || value === null) {
+          return undefined
+        }
+
+        const normalized = String(value).trim().toLowerCase()
+        if (normalized === NUMBERING_MODES.chaptered) {
+          return NUMBERING_MODES.chaptered
+        }
+        if (normalized === NUMBERING_MODES.standard) {
+          return NUMBERING_MODES.standard
+        }
+        return NUMBERING_MODE_ALIASES[normalized]
+      }
+
+      function firstDocumentAttribute(document, names = []) {
+        for (const name of names) {
+          const value = document.getAttribute(name)
+          if (value !== undefined && value !== null) {
+            return value
+          }
+        }
+        return undefined
+      }
+
+      function hasAnyHeaderAttribute(document) {
+        return [ATTRIBUTE_NAMES.chapterLevel].some(
+          (name) => document.getAttribute(name) !== undefined
+        )
+      }
+
+      function hasAnyOptions(options) {
+        return (
+          options.chapterLevel !== undefined ||
+          options.targets !== undefined ||
+          options.labels?.image !== undefined ||
+          options.labels?.table !== undefined ||
+          options.labels?.stem !== undefined
+        )
+      }
+
+      function resolveChapterSection(block, chapterLevel) {
+        let node = block
+        while (node) {
+          if (
+            node.getContext?.() === 'section' &&
+            node.getLevel?.() === chapterLevel
+          ) {
+            return node
+          }
+          node = node.getParent?.()
+        }
+        return null
+      }
+
+      function resolveEffectiveChapter(chapterSection, chapterNumbers) {
+        if (!chapterSection) {
+          return 1
+        }
+        return chapterNumbers.get(chapterSection)
+      }
+
+      function resolveChapterNumber(chapterSection, fallbackNumber) {
+        if (!chapterSection) {
+          return '1'
+        }
+
+        const numerals = []
+        let node = chapterSection
+        while (node && node.getContext?.() === 'section') {
+          const numeral = node.getNumeral?.()
+          if (typeof numeral === 'string' && numeral.length > 0) {
+            numerals.push(numeral)
+          }
+          node = node.getParent?.()
+        }
+
+        if (numerals.length > 0) {
+          return numerals.reverse().join('.')
+        }
+
+        return String(fallbackNumber)
+      }
+
+      function createContextMatcher(context, titled = true) {
+        return (node) => {
+          if (node.getContext?.() !== context) {
+            return false
+          }
+          return titled ? Boolean(node.getTitle?.()) : true
+        }
+      }
+
+      function applyCaption(block, label, numbering) {
+        block.setCaption(`${label} ${numbering}. `)
+      }
+
+      function applyTitle(block, label, numbering) {
+        block.setTitle(
+          `${label} ${numbering}. ${block.getTitle() ?? ''}`.trim()
+        )
+      }
+
+      function normalizeLabelAttributes(value, fallback = []) {
+        if (value === undefined) {
+          return fallback
+        }
+        if (value === null) {
+          return []
+        }
+        return Array.isArray(value) ? value : [value]
+      }
+
+      function defaultLabelFor(name) {
+        if (DEFAULT_LABELS[name]) {
+          return DEFAULT_LABELS[name]
+        }
+        return name.charAt(0).toUpperCase() + name.slice(1)
+      }
+
+      const DEFAULT_TARGETS = {
+        image: {
+          counterKey: 'image',
+          match: createContextMatcher('image', true),
+          labelAttributeNames: [ATTRIBUTE_NAMES.standardLabels.image],
+          defaultLabel: DEFAULT_LABELS.image,
+          apply: applyCaption
+        },
+        table: {
+          counterKey: 'table',
+          match: createContextMatcher('table', true),
+          labelAttributeNames: [ATTRIBUTE_NAMES.standardLabels.table],
+          defaultLabel: DEFAULT_LABELS.table,
+          apply: applyCaption
+        },
+        stem: {
+          counterKey: 'stem',
+          match: createContextMatcher('stem', true),
+          labelAttributeNames: ATTRIBUTE_NAMES.standardLabels.stem,
+          defaultLabel: DEFAULT_LABELS.stem,
+          apply: applyTitle
+        }
+      }
+
+      function buildTargetDefinition(name, definition, baseDefinition) {
+        const merged = {
+          ...(baseDefinition ?? {}),
+          ...(definition ?? {})
+        }
+
+        const match =
+          merged.match ??
+          (merged.context
+            ? createContextMatcher(merged.context, merged.titled !== false)
+            : null)
+
+        if (typeof match !== 'function') {
+          return null
+        }
+
+        const apply =
+          typeof merged.apply === 'function'
+            ? merged.apply
+            : merged.mode === 'title'
+              ? applyTitle
+              : applyCaption
+
+        return {
+          counterKey:
+            merged.counterKey ??
+            merged.counter ??
+            baseDefinition?.counterKey ??
+            name,
+          match,
+          labelAttributeNames: normalizeLabelAttributes(
+            firstDefined(merged.labelAttributeNames, merged.labelAttribute),
+            baseDefinition?.labelAttributeNames ?? []
+          ),
+          defaultLabel:
+            merged.defaultLabel ?? merged.label ?? defaultLabelFor(name),
+          apply
+        }
+      }
+
+      function resolveTargets(optionTargets) {
+        if (optionTargets === undefined) {
+          return { ...DEFAULT_TARGETS }
+        }
+
+        if (Array.isArray(optionTargets)) {
+          const targets = {}
+          for (const name of optionTargets) {
+            if (DEFAULT_TARGETS[name]) {
+              targets[name] = { ...DEFAULT_TARGETS[name] }
+            }
+          }
+          return targets
+        }
+
+        if (optionTargets && typeof optionTargets === 'object') {
+          const targets = {}
+          const onUnknown = optionTargets.onUnknown
+
+          for (const [name, definition] of Object.entries(optionTargets)) {
+            if (RESERVED_TARGET_OPTIONS.has(name)) {
+              continue
+            }
+
+            const baseDefinition = DEFAULT_TARGETS[name]
+
+            if (definition === false || definition === null) {
+              continue
+            }
+
+            if (definition === true) {
+              if (baseDefinition) {
+                targets[name] = { ...baseDefinition }
+                continue
+              }
+              if (onUnknown === 'error') {
+                throw new Error(`Unknown target: ${name}`)
+              }
+              continue
+            }
+
+            if (!definition || typeof definition !== 'object') {
+              if (onUnknown === 'error') {
+                throw new Error(`Invalid target definition: ${name}`)
+              }
+              continue
+            }
+
+            const resolvedDefinition = buildTargetDefinition(
+              name,
+              definition,
+              baseDefinition
+            )
+
+            if (resolvedDefinition) {
+              targets[name] = resolvedDefinition
+            } else if (onUnknown === 'error') {
+              throw new Error(`Unknown target: ${name}`)
+            }
+          }
+
+          return targets
+        }
+
+        return { ...DEFAULT_TARGETS }
+      }
+
+      function registerNumberedCaptions(registry, options = {}) {
+        registry.treeProcessor(function () {
+          this.process(function (document) {
+            const numberingMode = firstDefined(
+              normalizeNumberingMode(
+                document.getAttribute(ATTRIBUTE_NAMES.numbering)
+              ),
+              normalizeNumberingMode(options.defaultNumbering)
+            )
+
+            if (numberingMode === NUMBERING_MODES.standard) {
+              return document
+            }
+
+            const pluginEnabled =
+              numberingMode === NUMBERING_MODES.chaptered ||
+              hasAnyOptions(options) ||
+              hasAnyHeaderAttribute(document)
+
+            if (!pluginEnabled) {
+              return document
+            }
+
+            const chapterLevel = toValidChapterLevel(
+              firstDefined(
+                options.chapterLevel,
+                document.getAttribute(ATTRIBUTE_NAMES.chapterLevel),
+                1
+              ),
+              1
+            )
+
+            const targets = resolveTargets(options.targets)
+            const targetEntries = Object.entries(targets)
+            const labels = {}
+
+            for (const [name, target] of targetEntries) {
+              labels[name] =
+                firstDefined(
+                  options.labels?.[name],
+                  firstDocumentAttribute(document, target.labelAttributeNames),
+                  target.defaultLabel
+                ) ?? target.defaultLabel
+            }
+
+            const chapterNumbers = new Map()
+            let chapterIndex = 0
+            const countersByChapter = new Map()
+            const targetBlocks = document.findBy((node) =>
+              targetEntries.some(([, target]) => target.match(node))
+            )
+
+            for (const block of targetBlocks) {
+              const targetEntry = targetEntries.find(([, target]) =>
+                target.match(block)
+              )
+              if (!targetEntry) {
+                continue
+              }
+
+              const [targetName, target] = targetEntry
+              const chapterSection = resolveChapterSection(block, chapterLevel)
+              if (chapterSection && !chapterNumbers.has(chapterSection)) {
+                chapterIndex += 1
+                chapterNumbers.set(chapterSection, chapterIndex)
+              }
+
+              const effectiveChapter = resolveEffectiveChapter(
+                chapterSection,
+                chapterNumbers
+              )
+              const chapterNumber = resolveChapterNumber(
+                chapterSection,
+                effectiveChapter
+              )
+
+              if (!countersByChapter.has(chapterNumber)) {
+                countersByChapter.set(chapterNumber, {})
+              }
+
+              const counters = countersByChapter.get(chapterNumber)
+              const counterKey = target.counterKey
+              counters[counterKey] = (counters[counterKey] ?? 0) + 1
+              const numbering = `${chapterNumber}-${counters[counterKey]}`
+
+              target.apply(block, labels[targetName], numbering)
+            }
+
+            return document
+          })
+        })
+      }
 
       function setMathStatus(message) {
         mathStatus.textContent = message
+      }
+
+      function setRenderStatus(message) {
+        renderStatus.textContent = message
+      }
+
+      function clearRenderError() {
+        errorStatus.textContent = ''
+      }
+
+      function setRenderError(message) {
+        errorStatus.textContent = message
       }
 
       function loadMathJax() {
@@ -288,6 +708,87 @@
         )
       }
 
+      function parseHeaderAttributes(text) {
+        const attributes = {}
+        for (const rawLine of text.split('\n')) {
+          const line = rawLine.trim()
+          if (!line || !line.startsWith(':')) {
+            continue
+          }
+
+          const secondColonIndex = line.indexOf(':', 1)
+          if (secondColonIndex === -1) {
+            continue
+          }
+
+          const name = line.slice(1, secondColonIndex).trim()
+          const value = line.slice(secondColonIndex + 1).trim()
+          attributes[name] = value
+        }
+        return attributes
+      }
+
+      function parseOptionsText(text) {
+        const trimmed = text.trim()
+        if (!trimmed) {
+          return {}
+        }
+        return JSON.parse(trimmed)
+      }
+
+      function renderPreviews() {
+        if (!asciidoctor) {
+          setRenderError('Asciidoctor browser runtime failed to load.')
+          setRenderStatus('Rendering is unavailable.')
+          return
+        }
+
+        try {
+          clearRenderError()
+
+          const source = sourceView.value
+          const headerAttributes = parseHeaderAttributes(headerView.value)
+          const options = parseOptionsText(optionsView.value)
+
+          const convertOptions = {
+            safe: 'safe',
+            backend: 'html5',
+            attributes: headerAttributes
+          }
+
+          const defaultHtml = asciidoctor.convert(source, convertOptions)
+          const registry = asciidoctor.Extensions.create()
+          registerNumberedCaptions(registry, options)
+          const pluginHtml = asciidoctor.convert(source, {
+            ...convertOptions,
+            extension_registry: registry
+          })
+
+          defaultPreview.innerHTML = defaultHtml
+          pluginPreview.innerHTML = pluginHtml
+          setRenderStatus('Rendered from current editor contents.')
+          renderMath()
+        } catch (error) {
+          defaultPreview.innerHTML = ''
+          pluginPreview.innerHTML = ''
+          setRenderStatus('Rendering failed.')
+          setRenderError(error?.message ?? String(error))
+        }
+      }
+
+      function scheduleRender() {
+        window.clearTimeout(renderTimer)
+        renderTimer = window.setTimeout(renderPreviews, RENDER_DEBOUNCE_MS)
+      }
+
+      function currentEditorState() {
+        return {
+          source: sourceView.value,
+          optionsText: optionsView.value,
+          headerText: headerView.value
+        }
+      }
+
       for (const preset of demoPresets) {
         const option = document.createElement('option')
         option.value = preset.id
@@ -303,36 +804,22 @@
         optionsView.value = preset.optionsText
         headerView.value = preset.headerAttributesText
         presetDescription.textContent = preset.description
-
-        defaultPreview.innerHTML = preset.defaultHtml
-        pluginPreview.innerHTML = preset.pluginHtml
-        renderMath()
+        scheduleRender()
       }
 
       function readShareState() {
-        const selectedPreset = demoPresets.find(
-          (entry) => entry.id === presetSelect.value
-        )
-        const options = selectedPreset?.options ?? {}
-        const labels = options.labels ?? {}
         return {
           source: sourceView.value,
-          chapterLevel: Number(options.chapterLevel ?? 1),
-          labels: {
-            image: labels.image ?? '',
-            table: labels.table ?? '',
-            stem: labels.stem ?? ''
-          }
+          optionsText: optionsView.value,
+          headerText: headerView.value
         }
       }
 
       function buildShareUrl(state) {
         const params = new URLSearchParams()
         params.set('src', state.source)
-        params.set('cl', String(state.chapterLevel))
-        params.set('li', state.labels.image)
-        params.set('lt', state.labels.table)
-        params.set('ls', state.labels.stem)
+        params.set('opt', state.optionsText)
+        params.set('hdr', state.headerText)
         const query = params.toString()
         return `${window.location.origin}${window.location.pathname}?${query}`
       }
@@ -347,14 +834,10 @@
 
       function findPresetByShareState(state) {
         return demoPresets.find((preset) => {
-          const labels = preset.options?.labels ?? {}
           return (
             preset.source === state.source &&
-            Number(preset.options?.chapterLevel ?? 1) ===
-              Number(state.chapterLevel) &&
-            labels.image === state.labels.image &&
-            labels.table === state.labels.table &&
-            labels.stem === state.labels.stem
+            preset.optionsText === state.optionsText &&
+            preset.headerAttributesText === state.headerText
           )
         })
       }
@@ -367,12 +850,8 @@
 
         return {
           source: params.get('src') ?? '',
-          chapterLevel: Number.parseInt(params.get('cl') ?? '1', 10),
-          labels: {
-            image: params.get('li') ?? '',
-            table: params.get('lt') ?? '',
-            stem: params.get('ls') ?? ''
-          }
+          optionsText: params.get('opt') ?? '',
+          headerText: params.get('hdr') ?? ''
         }
       }
 
@@ -380,6 +859,19 @@
         shareStatus.textContent = ''
         applyPreset(event.target.value)
       })
+
+      resetButton.addEventListener('click', () => {
+        shareStatus.textContent = ''
+        applyPreset(presetSelect.value)
+      })
+
+      for (const field of [sourceView, optionsView, headerView]) {
+        field.addEventListener('input', () => {
+          shareStatus.textContent = ''
+          setRenderStatus('Editing... rendering shortly.')
+          scheduleRender()
+        })
+      }
 
       shareButton.addEventListener('click', async () => {
         const state = readShareState()
@@ -414,8 +906,11 @@
         } else {
           applyPreset(demoPresets[0]?.id)
           sourceView.value = initialShareState.source
+          optionsView.value = initialShareState.optionsText
+          headerView.value = initialShareState.headerText
+          scheduleRender()
           shareStatus.textContent =
-            'Query loaded. This static demo can only auto-render known preset combinations.'
+            'Query loaded into the editors and rendered as custom content.'
         }
       }
 
