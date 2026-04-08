@@ -66,7 +66,7 @@ image::sample.png[]
 :equation-caption: 式
 ```
 
-優先順位: `register(registry, options)` > Asciidocヘッダー属性 > デフォルト値。
+優先順位: Asciidocヘッダー属性 > `register(registry, options)` > デフォルト値。
 
 この拡張は Asciidoctor 標準のキャプション属性を参照します。
 
