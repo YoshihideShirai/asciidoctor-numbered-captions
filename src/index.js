@@ -315,8 +315,8 @@ function register(registry, options = {}) {
 
       const chapterLevel = toValidChapterLevel(
         firstDefined(
-          options.chapterLevel,
           document.getAttribute(ATTRIBUTE_NAMES.chapterLevel),
+          options.chapterLevel,
           1
         ),
         1
@@ -329,8 +329,8 @@ function register(registry, options = {}) {
       for (const [name, target] of targetEntries) {
         labels[name] =
           firstDefined(
-            options.labels?.[name],
             firstDocumentAttribute(document, target.labelAttributeNames),
+            options.labels?.[name],
             target.defaultLabel
           ) ?? target.defaultLabel
       }

@@ -66,7 +66,7 @@ Header attribute example (Asciidoc):
 :equation-caption: Equation
 ```
 
-Priority: `register(registry, options)` > Asciidoc header attributes > defaults.
+Priority: Asciidoc header attributes > `register(registry, options)` > defaults.
 
 This extension uses Asciidoctor standard caption attributes:
 
@@ -188,7 +188,7 @@ After deployment, verify the demo page with these points:
 
 - The **Share** button generates a URL that includes the current Asciidoc source + plugin option subset (`chapterLevel`, `labels`), so opening the link reproduces the same demo state.
 - Preset **Default**: verifies baseline chapter numbering (`chapterLevel: 1`) for figure/table/equation captions.
-- Preset **日本語ラベル**: verifies label priority (`register(..., options).labels` overrides Asciidoc header caption attributes).
+- Preset **日本語ラベル**: verifies label priority (Asciidoc header caption attributes override `register(..., options).labels`).
 - Preset **chapterLevel=2**: verifies chapter boundaries switch to `===` sections and numbering resets at each level-3 section.
 - Figure, table, and equation captions are numbered with chapter prefix (for example `Figure 1-1`, `Table 1-1`, `Equation 1-1`).
 - Numbering resets when chapter changes.

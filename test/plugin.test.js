@@ -297,7 +297,7 @@ a = b
   assert.deepEqual(extractNumbering(htmlWithStemCaption, 'Stem'), ['1-1'])
 })
 
-test('prefers register(registry, options) over Asciidoc header attributes', () => {
+test('prefers Asciidoc header attributes over register(registry, options) labels', () => {
   const input = `= Sample
 :figure-caption: 図
 
@@ -313,8 +313,32 @@ image::one.png[]
     }
   })
 
-  assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
-  assert.deepEqual(extractNumbering(html, '図'), [])
+  assert.deepEqual(extractNumbering(html, '図'), ['1-1'])
+  assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
+test('prefers Asciidoc header attributes over register(registry, options) chapterLevel', () => {
+  const input = `= Sample
+:numbered-captions-chapter-level: 2
+
+== Part One
+
+=== Chapter One
+
+.Figure One
+image::one.png[]
+
+=== Chapter Two
+
+.Figure Two
+image::two.png[]
+`
+
+  const html = convertWithPlugin(input, {
+    chapterLevel: 1
+  })
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '1.2-1'])
 })
 
 test('supports chapterLevel=2 from JS options with section-based chapter numbering', () => {
