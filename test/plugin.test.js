@@ -55,6 +55,35 @@ image::one.png[]
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
 })
 
+test('supports sectioned numbering mode from options without requiring chapterLevel', () => {
+  const input = `= Sample
+
+== Chapter One
+
+=== Unit One
+
+.Figure One
+image::one.png[]
+
+== Chapter Two
+
+=== Unit Two
+
+.Figure Two
+image::two.png[]
+
+.Table Two
+|===
+|A |B
+|===
+`
+
+  const html = convertWithPlugin(input, { defaultNumbering: 'sectioned' })
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '2.1-1'])
+  assert.deepEqual(extractNumbering(html, 'Table'), ['2.1-1'])
+})
+
 test('uses standard numbering when defaultNumbering=standard is set in options', () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
@@ -101,6 +130,50 @@ image::one.png[]
 
   assert.match(html, /Figure 1\. Figure One/)
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
+})
+
+test('supports sectioned numbering mode from header attribute', () => {
+  const input = `= Sample
+:numbered-captions-numbering: sectioned
+
+== Chapter One
+
+=== Unit One
+
+.Figure One
+image::one.png[]
+
+== Chapter Two
+
+=== Unit Two
+
+.Figure Two
+image::two.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '2.1-1'])
+})
+
+test('supports deep section numerals without chapterLevel in sectioned mode', () => {
+  const input = `= Sample
+:numbered-captions-numbering: sectioned
+
+== L1
+=== L2
+==== L3
+===== L4
+====== L5
+======= L6
+
+.Deep Figure
+image::deep.png[]
+`
+
+  const html = convertWithPlugin(input)
+
+  assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1.1.1.1-1'])
 })
 
 test('keeps supporting plugin as an alias of chaptered numbering', () => {

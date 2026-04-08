@@ -18,12 +18,15 @@ const ATTRIBUTE_NAMES = {
 
 const NUMBERING_MODES = {
   chaptered: 'chaptered',
-  standard: 'standard'
+  standard: 'standard',
+  sectioned: 'sectioned'
 }
 
 const NUMBERING_MODE_ALIASES = {
   plugin: NUMBERING_MODES.chaptered,
-  asciidoctor: NUMBERING_MODES.standard
+  asciidoctor: NUMBERING_MODES.standard,
+  caption: NUMBERING_MODES.sectioned,
+  captioned: NUMBERING_MODES.sectioned
 }
 
 const RESERVED_TARGET_OPTIONS = new Set(['onUnknown'])
@@ -77,6 +80,9 @@ function normalizeNumberingMode(value) {
   }
   if (normalized === NUMBERING_MODES.standard) {
     return NUMBERING_MODES.standard
+  }
+  if (normalized === NUMBERING_MODES.sectioned) {
+    return NUMBERING_MODES.sectioned
   }
   if (NUMBERING_MODE_ALIASES[normalized]) {
     return NUMBERING_MODE_ALIASES[normalized]
@@ -144,6 +150,32 @@ function applyCaption(block, label, numbering) {
 
 function applyTitle(block, label, numbering) {
   block.setTitle(`${label} ${numbering}. ${block.getTitle() ?? ''}`.trim())
+}
+
+function resolveSectionNumber(block) {
+  let node = block
+  while (node && node.getContext?.() !== 'section') {
+    node = node.getParent?.()
+  }
+
+  if (!node) {
+    return '1'
+  }
+
+  const numerals = []
+  while (node && node.getContext?.() === 'section') {
+    const numeral = node.getNumeral?.()
+    if (typeof numeral === 'string' && numeral.length > 0) {
+      numerals.push(numeral)
+    }
+    node = node.getParent?.()
+  }
+
+  if (numerals.length > 0) {
+    return numerals.reverse().join('.')
+  }
+
+  return '1'
 }
 
 function normalizeLabelAttributes(value, fallback = []) {
@@ -306,6 +338,7 @@ function register(registry, options = {}) {
 
       const pluginEnabled =
         numberingMode === NUMBERING_MODES.chaptered ||
+        numberingMode === NUMBERING_MODES.sectioned ||
         hasAnyOptions(options) ||
         hasAnyHeaderAttribute(document)
 
@@ -365,15 +398,23 @@ function register(registry, options = {}) {
           chapterSection,
           effectiveChapter
         )
+        const sectionNumber = resolveSectionNumber(block)
+        const scopeKey =
+          numberingMode === NUMBERING_MODES.sectioned
+            ? sectionNumber
+            : chapterNumber
 
-        if (!countersByChapter.has(chapterNumber)) {
-          countersByChapter.set(chapterNumber, {})
+        if (!countersByChapter.has(scopeKey)) {
+          countersByChapter.set(scopeKey, {})
         }
 
-        const counters = countersByChapter.get(chapterNumber)
+        const counters = countersByChapter.get(scopeKey)
         const counterKey = target.counterKey
         counters[counterKey] = (counters[counterKey] ?? 0) + 1
-        const numbering = `${chapterNumber}-${counters[counterKey]}`
+        const numbering =
+          numberingMode === NUMBERING_MODES.sectioned
+            ? `${sectionNumber}-${counters[counterKey]}`
+            : `${chapterNumber}-${counters[counterKey]}`
 
         target.apply(block, labels[targetName], numbering)
       }

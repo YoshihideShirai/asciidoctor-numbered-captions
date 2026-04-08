@@ -79,9 +79,10 @@ image::sample.png[]
 - `defaultNumbering`（デフォルト: 未指定）
   - 同じ extension registry で処理する全ドキュメントに対する既定の採番方式。
   - `chaptered`: この拡張の章付き採番を有効化。
+  - `sectioned`: 章レベルを固定せず、現在のセクション番号を使って採番（例: セクション `1.1.1` なら `Figure 1.1.1-1`）。
   - `standard`: Asciidoctor標準の採番を強制。
-  - 後方互換エイリアス: `plugin` = `chaptered`, `asciidoctor` = `standard`。
-  - ドキュメントごとに `:numbered-captions-numbering:`（`chaptered` / `standard`）を指定すると、`defaultNumbering` より優先されます。
+  - 後方互換エイリアス: `plugin` = `chaptered`, `asciidoctor` = `standard`, `caption`/`captioned` = `sectioned`。
+  - ドキュメントごとに `:numbered-captions-numbering:`（`chaptered` / `sectioned` / `standard`）を指定すると、`defaultNumbering` より優先されます。
 
 - `chapterLevel` (default: `1`)
   - どのセクションレベルをチャプターとして扱うか（`1` = `==`, `2` = `===`, ...）。
