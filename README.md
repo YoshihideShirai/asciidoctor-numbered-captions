@@ -24,13 +24,13 @@ npm install YoshihideShirai/asciidoctor-numbered-captions
 ## Usage
 
 ```js
-const asciidoctor = require('asciidoctor')()
-const numberedCaptions = require('asciidoctor-numbered-captions')
+import * as asciidoctor from 'asciidoctor'
+import numberedCaptions from 'asciidoctor-numbered-captions'
 
 const registry = asciidoctor.Extensions.create()
 numberedCaptions.register(registry)
 
-const html = asciidoctor.convert(
+const html = await asciidoctor.convert(
   `= Document
 
 == Chapter A

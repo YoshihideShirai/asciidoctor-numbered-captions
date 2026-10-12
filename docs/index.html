@@ -206,7 +206,7 @@
 
     <script src="./demo-presets.js"></script>
     <script type="module">
-      import Asciidoctor from './vendor/asciidoctor.js'
+      import * as asciidoctor from './vendor/asciidoctor.js'
 
       window.MathJax = {
         tex: {
@@ -245,7 +245,6 @@
       const RENDER_DEBOUNCE_MS = 300
       let mathJaxReady = false
       let renderTimer = null
-      const asciidoctor = Asciidoctor()
 
       const DEFAULT_LABELS = {
         image: 'Figure',
@@ -320,7 +319,7 @@
 
       function hasAnyHeaderAttribute(document) {
         return [ATTRIBUTE_NAMES.chapterLevel].some(
-          (name) => document.getAttribute(name) !== undefined
+          (name) => document.getAttribute(name) != null
         )
       }
 
@@ -754,7 +753,7 @@
         return JSON.parse(trimmed)
       }
 
-      function renderPreviews() {
+      async function renderPreviews() {
         if (!asciidoctor) {
           setRenderError('Asciidoctor browser runtime failed to load.')
           setRenderStatus('Rendering is unavailable.')
@@ -774,10 +773,10 @@
             attributes: headerAttributes
           }
 
-          const defaultHtml = asciidoctor.convert(source, convertOptions)
+          const defaultHtml = await asciidoctor.convert(source, convertOptions)
           const registry = asciidoctor.Extensions.create()
           registerNumberedCaptions(registry, options)
-          const pluginHtml = asciidoctor.convert(source, {
+          const pluginHtml = await asciidoctor.convert(source, {
             ...convertOptions,
             extension_registry: registry
           })

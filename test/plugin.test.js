@@ -2,7 +2,7 @@
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const asciidoctor = require('asciidoctor')()
+const asciidoctor = require('asciidoctor')
 const { register } = require('../src/index')
 
 function convertWithPlugin(source, options = {}) {
@@ -26,7 +26,7 @@ function extractNumbering(html, label) {
   )
 }
 
-test('keeps Asciidoctor default numbering when no plugin config is provided', () => {
+test('keeps Asciidoctor default numbering when no plugin config is provided', async () => {
   const input = `= Sample
 
 == Chapter One
@@ -35,13 +35,13 @@ test('keeps Asciidoctor default numbering when no plugin config is provided', ()
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.match(html, /Figure 1\. Figure One/)
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
-test('uses chaptered numbering when defaultNumbering=chaptered is set in options', () => {
+test('uses chaptered numbering when defaultNumbering=chaptered is set in options', async () => {
   const input = `= Sample
 
 == Chapter One
@@ -50,12 +50,12 @@ test('uses chaptered numbering when defaultNumbering=chaptered is set in options
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, { defaultNumbering: 'chaptered' })
+  const html = await convertWithPlugin(input, { defaultNumbering: 'chaptered' })
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
 })
 
-test('supports sectioned numbering mode from options without requiring chapterLevel', () => {
+test('supports sectioned numbering mode from options without requiring chapterLevel', async () => {
   const input = `= Sample
 
 == Chapter One
@@ -78,13 +78,13 @@ image::two.png[]
 |===
 `
 
-  const html = convertWithPlugin(input, { defaultNumbering: 'sectioned' })
+  const html = await convertWithPlugin(input, { defaultNumbering: 'sectioned' })
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '2.1-1'])
   assert.deepEqual(extractNumbering(html, 'Table'), ['2.1-1'])
 })
 
-test('uses standard numbering when defaultNumbering=standard is set in options', () => {
+test('uses standard numbering when defaultNumbering=standard is set in options', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
 
@@ -94,13 +94,13 @@ test('uses standard numbering when defaultNumbering=standard is set in options',
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, { defaultNumbering: 'standard' })
+  const html = await convertWithPlugin(input, { defaultNumbering: 'standard' })
 
   assert.match(html, /Figure 1\. Figure One/)
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
-test('allows header attribute to force chaptered numbering', () => {
+test('allows header attribute to force chaptered numbering', async () => {
   const input = `= Sample
 :numbered-captions-numbering: chaptered
 
@@ -110,12 +110,12 @@ test('allows header attribute to force chaptered numbering', () => {
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, { defaultNumbering: 'standard' })
+  const html = await convertWithPlugin(input, { defaultNumbering: 'standard' })
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
 })
 
-test('allows header attribute to force standard numbering', () => {
+test('allows header attribute to force standard numbering', async () => {
   const input = `= Sample
 :numbered-captions-numbering: standard
 :numbered-captions-chapter-level: 1
@@ -126,13 +126,13 @@ test('allows header attribute to force standard numbering', () => {
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, { defaultNumbering: 'chaptered' })
+  const html = await convertWithPlugin(input, { defaultNumbering: 'chaptered' })
 
   assert.match(html, /Figure 1\. Figure One/)
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
-test('supports sectioned numbering mode from header attribute', () => {
+test('supports sectioned numbering mode from header attribute', async () => {
   const input = `= Sample
 :numbered-captions-numbering: sectioned
 
@@ -151,12 +151,12 @@ image::one.png[]
 image::two.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '2.1-1'])
 })
 
-test('supports deep section numerals without chapterLevel in sectioned mode', () => {
+test('supports deep section numerals without chapterLevel in sectioned mode', async () => {
   const input = `= Sample
 :numbered-captions-numbering: sectioned
 
@@ -171,12 +171,12 @@ test('supports deep section numerals without chapterLevel in sectioned mode', ()
 image::deep.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1.1.1.1-1'])
 })
 
-test('keeps supporting plugin as an alias of chaptered numbering', () => {
+test('keeps supporting plugin as an alias of chaptered numbering', async () => {
   const input = `= Sample
 
 == Chapter One
@@ -185,12 +185,12 @@ test('keeps supporting plugin as an alias of chaptered numbering', () => {
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, { defaultNumbering: 'plugin' })
+  const html = await convertWithPlugin(input, { defaultNumbering: 'plugin' })
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
 })
 
-test('keeps supporting asciidoctor as an alias of standard numbering', () => {
+test('keeps supporting asciidoctor as an alias of standard numbering', async () => {
   const input = `= Sample
 :numbered-captions-numbering: asciidoctor
 :numbered-captions-chapter-level: 1
@@ -201,13 +201,13 @@ test('keeps supporting asciidoctor as an alias of standard numbering', () => {
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.match(html, /Figure 1\. Figure One/)
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
-test('ignores invalid defaultNumbering values without enabling plugin numbering', () => {
+test('ignores invalid defaultNumbering values without enabling plugin numbering', async () => {
   const input = `= Sample
 
 == Chapter One
@@ -216,13 +216,15 @@ test('ignores invalid defaultNumbering values without enabling plugin numbering'
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, { defaultNumbering: 'invalid-mode' })
+  const html = await convertWithPlugin(input, {
+    defaultNumbering: 'invalid-mode'
+  })
 
   assert.match(html, /Figure 1\. Figure One/)
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
-test('ignores invalid numbering header values without enabling plugin numbering', () => {
+test('ignores invalid numbering header values without enabling plugin numbering', async () => {
   const input = `= Sample
 :numbered-captions-numbering: invalid-mode
 
@@ -232,13 +234,13 @@ test('ignores invalid numbering header values without enabling plugin numbering'
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.match(html, /Figure 1\. Figure One/)
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
-test('numbers image/table/equation captions as chapter-counter from header attributes', () => {
+test('numbers image/table/equation captions as chapter-counter from header attributes', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
 
@@ -275,14 +277,14 @@ F = ma
 ++++
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '2-1'])
   assert.deepEqual(extractNumbering(html, 'Table'), ['1-1', '2-1'])
   assert.deepEqual(extractNumbering(html, 'Equation'), ['1-1', '2-1'])
 })
 
-test('supports Asciidoctor standard caption attributes when options are not provided', () => {
+test('supports Asciidoctor standard caption attributes when options are not provided', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: invalid
 :figure-caption: 図
@@ -306,14 +308,14 @@ a = b
 ++++
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, '図'), ['1-1'])
   assert.deepEqual(extractNumbering(html, '表'), ['1-1'])
   assert.deepEqual(extractNumbering(html, '式'), ['1-1'])
 })
 
-test('uses Asciidoctor standard figure/table caption attributes as fallback labels', () => {
+test('uses Asciidoctor standard figure/table caption attributes as fallback labels', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
 :figure-caption: 図
@@ -330,13 +332,13 @@ image::one.png[]
 |===
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, '図'), ['1-1'])
   assert.deepEqual(extractNumbering(html, '表'), ['1-1'])
 })
 
-test('uses Asciidoctor standard equation/stem caption attributes as fallback labels', () => {
+test('uses Asciidoctor standard equation/stem caption attributes as fallback labels', async () => {
   const equationCaptionInput = `= Sample
 :numbered-captions-chapter-level: 1
 :equation-caption: Eq
@@ -363,14 +365,14 @@ a = b
 ++++
 `
 
-  const htmlWithEquationCaption = convertWithPlugin(equationCaptionInput)
-  const htmlWithStemCaption = convertWithPlugin(stemCaptionInput)
+  const htmlWithEquationCaption = await convertWithPlugin(equationCaptionInput)
+  const htmlWithStemCaption = await convertWithPlugin(stemCaptionInput)
 
   assert.deepEqual(extractNumbering(htmlWithEquationCaption, 'Eq'), ['1-1'])
   assert.deepEqual(extractNumbering(htmlWithStemCaption, 'Stem'), ['1-1'])
 })
 
-test('prefers Asciidoc header attributes over register(registry, options) labels', () => {
+test('prefers Asciidoc header attributes over register(registry, options) labels', async () => {
   const input = `= Sample
 :figure-caption: 図
 
@@ -380,7 +382,7 @@ test('prefers Asciidoc header attributes over register(registry, options) labels
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, {
+  const html = await convertWithPlugin(input, {
     labels: {
       image: 'Figure'
     }
@@ -390,7 +392,7 @@ image::one.png[]
   assert.deepEqual(extractNumbering(html, 'Figure'), [])
 })
 
-test('prefers Asciidoc header attributes over register(registry, options) chapterLevel', () => {
+test('prefers Asciidoc header attributes over register(registry, options) chapterLevel', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 2
 
@@ -407,14 +409,14 @@ image::one.png[]
 image::two.png[]
 `
 
-  const html = convertWithPlugin(input, {
+  const html = await convertWithPlugin(input, {
     chapterLevel: 1
   })
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '1.2-1'])
 })
 
-test('supports chapterLevel=2 from JS options with section-based chapter numbering', () => {
+test('supports chapterLevel=2 from JS options with section-based chapter numbering', async () => {
   const input = `= Sample
 
 == Part One
@@ -435,7 +437,7 @@ image::one.png[]
 image::two.png[]
 `
 
-  const html = convertWithPlugin(input, {
+  const html = await convertWithPlugin(input, {
     chapterLevel: 2,
     labels: {
       image: 'Figure',
@@ -447,7 +449,7 @@ image::two.png[]
   assert.deepEqual(extractNumbering(html, 'Table'), ['1.1-1'])
 })
 
-test('supports chapterLevel=2 from Asciidoc header attributes with section-based chapter numbering', () => {
+test('supports chapterLevel=2 from Asciidoc header attributes with section-based chapter numbering', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 2
 
@@ -464,12 +466,12 @@ image::one.png[]
 image::two.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1.1-1', '1.2-1'])
 })
 
-test('treats preamble captions as chapter 1 and keeps numbering continuous into first chapter', () => {
+test('treats preamble captions as chapter 1 and keeps numbering continuous into first chapter', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
 
@@ -482,12 +484,12 @@ image::one.png[]
 image::two.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '1-2'])
 })
 
-test('treats blocks as chapter 1 when only shallower or deeper sections exist', () => {
+test('treats blocks as chapter 1 when only shallower or deeper sections exist', async () => {
   const shallowOnlyInput = `= Sample
 :numbered-captions-chapter-level: 2
 
@@ -506,14 +508,14 @@ image::one.png[]
 image::one.png[]
 `
 
-  const shallowOnlyHtml = convertWithPlugin(shallowOnlyInput)
-  const deepOnlyHtml = convertWithPlugin(deepOnlyInput)
+  const shallowOnlyHtml = await convertWithPlugin(shallowOnlyInput)
+  const deepOnlyHtml = await convertWithPlugin(deepOnlyInput)
 
   assert.deepEqual(extractNumbering(shallowOnlyHtml, 'Figure'), ['1-1'])
   assert.deepEqual(extractNumbering(deepOnlyHtml, 'Figure'), ['1-1'])
 })
 
-test('treats captions as chapter 1 in a document without chapter headings', () => {
+test('treats captions as chapter 1 in a document without chapter headings', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
 
@@ -524,12 +526,12 @@ image::one.png[]
 image::two.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1', '1-2'])
 })
 
-test('handles chapters with multiple tables and without figures', () => {
+test('handles chapters with multiple tables and without figures', async () => {
   const input = `= Sample
 :numbered-captions-chapter-level: 1
 
@@ -564,14 +566,14 @@ x = y
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input)
+  const html = await convertWithPlugin(input)
 
   assert.deepEqual(extractNumbering(html, 'Table'), ['1-1', '1-2', '2-1'])
   assert.deepEqual(extractNumbering(html, 'Equation'), ['2-1'])
   assert.deepEqual(extractNumbering(html, 'Figure'), ['3-1'])
 })
 
-test('supports custom targets with options.targets object while keeping default targets', () => {
+test('supports custom targets with options.targets object while keeping default targets', async () => {
   const input = `= Sample
 
 == Chapter One
@@ -586,7 +588,7 @@ console.log('hello')
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, {
+  const html = await convertWithPlugin(input, {
     chapterLevel: 1,
     targets: {
       image: true,
@@ -605,7 +607,7 @@ image::one.png[]
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
 })
 
-test('ignores unknown targets by default and can fail explicitly', () => {
+test('ignores unknown targets by default and can fail explicitly', async () => {
   const input = `= Sample
 
 == Chapter One
@@ -614,13 +616,13 @@ test('ignores unknown targets by default and can fail explicitly', () => {
 image::one.png[]
 `
 
-  const html = convertWithPlugin(input, {
+  const html = await convertWithPlugin(input, {
     chapterLevel: 1,
     targets: ['image', 'unknown-target']
   })
   assert.deepEqual(extractNumbering(html, 'Figure'), ['1-1'])
 
-  assert.throws(
+  await assert.rejects(
     () =>
       convertWithPlugin(input, {
         chapterLevel: 1,
