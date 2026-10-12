@@ -55,7 +55,7 @@ function firstDocumentAttribute(document, names = []) {
 
 function hasAnyHeaderAttribute(document) {
   return [ATTRIBUTE_NAMES.chapterLevel].some(
-    (name) => document.getAttribute(name) !== undefined
+    (name) => document.getAttribute(name) != null
   )
 }
 

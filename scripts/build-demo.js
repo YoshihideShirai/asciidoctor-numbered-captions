@@ -1,6 +1,6 @@
 const fs = require('node:fs')
 const path = require('node:path')
-const asciidoctor = require('asciidoctor')()
+const asciidoctor = require('asciidoctor')
 const prettier = require('prettier')
 const NumberedCaptions = require('../src')
 
@@ -427,19 +427,19 @@ function toHeaderAttributesBlock(headerAttributes = {}) {
     .join('\n')
 }
 
-function renderPreset(preset) {
+async function renderPreset(preset) {
   const convertOptions = {
     safe: 'safe',
     backend: 'html5',
     attributes: toAsciidoctorAttributes(preset.headerAttributes)
   }
 
-  const defaultHtml = asciidoctor.convert(preset.source, convertOptions)
+  const defaultHtml = await asciidoctor.convert(preset.source, convertOptions)
 
   const registry = asciidoctor.Extensions.create()
   NumberedCaptions.register(registry, preset.options)
 
-  const pluginHtml = asciidoctor.convert(preset.source, {
+  const pluginHtml = await asciidoctor.convert(preset.source, {
     ...convertOptions,
     extension_registry: registry
   })
@@ -453,37 +453,40 @@ function renderPreset(preset) {
   }
 }
 
-const presets = PRESET_CONFIGS.map(renderPreset)
+async function main() {
+  const presets = await Promise.all(PRESET_CONFIGS.map(renderPreset))
 
-const outDir = path.join(process.cwd(), 'docs')
-const vendorDir = path.join(outDir, 'vendor')
-const indexPath = path.join(outDir, 'index.html')
-const presetsPath = path.join(outDir, 'demo-presets.js')
-const asciidoctorBrowserPath = path.join(
-  process.cwd(),
-  'node_modules',
-  '@asciidoctor',
-  'core',
-  'dist',
-  'browser',
-  'asciidoctor.js'
-)
-const asciidoctorVendorPath = path.join(vendorDir, 'asciidoctor.js')
-const asciidoctorStylesheetPath = path.join(
-  process.cwd(),
-  'node_modules',
-  '@asciidoctor',
-  'core',
-  'dist',
-  'css',
-  'asciidoctor.css'
-)
-const asciidoctorStylesheetVendorPath = path.join(vendorDir, 'asciidoctor.css')
+  const outDir = path.join(process.cwd(), 'docs')
+  const vendorDir = path.join(outDir, 'vendor')
+  const indexPath = path.join(outDir, 'index.html')
+  const presetsPath = path.join(outDir, 'demo-presets.js')
+  const asciidoctorBrowserPath = path.join(
+    process.cwd(),
+    'node_modules',
+    '@asciidoctor',
+    'core',
+    'build',
+    'browser',
+    'index.js'
+  )
+  const asciidoctorVendorPath = path.join(vendorDir, 'asciidoctor.js')
+  const asciidoctorStylesheetPath = path.join(
+    process.cwd(),
+    'node_modules',
+    '@asciidoctor',
+    'core',
+    'data',
+    'asciidoctor-default.css'
+  )
+  const asciidoctorStylesheetVendorPath = path.join(
+    vendorDir,
+    'asciidoctor.css'
+  )
 
-fs.mkdirSync(outDir, { recursive: true })
-fs.mkdirSync(vendorDir, { recursive: true })
+  fs.mkdirSync(outDir, { recursive: true })
+  fs.mkdirSync(vendorDir, { recursive: true })
 
-const page = `<!doctype html>
+  const page = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -691,7 +694,7 @@ const page = `<!doctype html>
 
     <script src="./demo-presets.js"></script>
     <script type="module">
-      import Asciidoctor from './vendor/asciidoctor.js'
+      import * as asciidoctor from './vendor/asciidoctor.js'
 
       window.MathJax = {
         tex: {
@@ -723,7 +726,6 @@ const page = `<!doctype html>
       const RENDER_DEBOUNCE_MS = 300
       let mathJaxReady = false
       let renderTimer = null
-      const asciidoctor = Asciidoctor()
 
       const DEFAULT_LABELS = {
         image: 'Figure',
@@ -798,7 +800,7 @@ const page = `<!doctype html>
 
       function hasAnyHeaderAttribute(document) {
         return [ATTRIBUTE_NAMES.chapterLevel].some(
-          (name) => document.getAttribute(name) !== undefined
+          (name) => document.getAttribute(name) != null
         )
       }
 
@@ -1232,7 +1234,7 @@ const page = `<!doctype html>
         return JSON.parse(trimmed)
       }
 
-      function renderPreviews() {
+      async function renderPreviews() {
         if (!asciidoctor) {
           setRenderError('Asciidoctor browser runtime failed to load.')
           setRenderStatus('Rendering is unavailable.')
@@ -1252,10 +1254,10 @@ const page = `<!doctype html>
             attributes: headerAttributes
           }
 
-          const defaultHtml = asciidoctor.convert(source, convertOptions)
+          const defaultHtml = await asciidoctor.convert(source, convertOptions)
           const registry = asciidoctor.Extensions.create()
           registerNumberedCaptions(registry, options)
-          const pluginHtml = asciidoctor.convert(source, {
+          const pluginHtml = await asciidoctor.convert(source, {
             ...convertOptions,
             extension_registry: registry
           })
@@ -1415,40 +1417,43 @@ const page = `<!doctype html>
 </html>
 `
 
-const presetsModule = `globalThis.demoPresets = ${JSON.stringify(presets, null, 2)}\n`
+  const presetsModule = `globalThis.demoPresets = ${JSON.stringify(presets, null, 2)}\n`
 
-async function writeFormattedDemoAssets() {
-  const indexPrettierConfig =
-    (await prettier.resolveConfig(indexPath, { editorconfig: true })) ?? {}
-  const presetsPrettierConfig =
-    (await prettier.resolveConfig(presetsPath, { editorconfig: true })) ?? {}
-  const formattedPage = await prettier.format(page, {
-    ...indexPrettierConfig,
-    filepath: indexPath
-  })
-  const formattedPresetsModule = await prettier.format(presetsModule, {
-    ...presetsPrettierConfig,
-    filepath: presetsPath
-  })
-  const pageWithTrailingNewline = formattedPage.endsWith('\n')
-    ? formattedPage
-    : `${formattedPage}\n`
-  const presetsWithTrailingNewline = formattedPresetsModule.endsWith('\n')
-    ? formattedPresetsModule
-    : `${formattedPresetsModule}\n`
+  async function writeFormattedDemoAssets() {
+    const indexPrettierConfig =
+      (await prettier.resolveConfig(indexPath, { editorconfig: true })) ?? {}
+    const presetsPrettierConfig =
+      (await prettier.resolveConfig(presetsPath, { editorconfig: true })) ?? {}
+    const formattedPage = await prettier.format(page, {
+      ...indexPrettierConfig,
+      filepath: indexPath
+    })
+    const formattedPresetsModule = await prettier.format(presetsModule, {
+      ...presetsPrettierConfig,
+      filepath: presetsPath
+    })
+    const pageWithTrailingNewline = formattedPage.endsWith('\n')
+      ? formattedPage
+      : `${formattedPage}\n`
+    const presetsWithTrailingNewline = formattedPresetsModule.endsWith('\n')
+      ? formattedPresetsModule
+      : `${formattedPresetsModule}\n`
 
-  fs.writeFileSync(indexPath, pageWithTrailingNewline)
-  fs.writeFileSync(presetsPath, presetsWithTrailingNewline)
-  fs.copyFileSync(asciidoctorBrowserPath, asciidoctorVendorPath)
-  fs.copyFileSync(asciidoctorStylesheetPath, asciidoctorStylesheetVendorPath)
+    fs.writeFileSync(indexPath, pageWithTrailingNewline)
+    fs.writeFileSync(presetsPath, presetsWithTrailingNewline)
+    fs.copyFileSync(asciidoctorBrowserPath, asciidoctorVendorPath)
+    fs.copyFileSync(asciidoctorStylesheetPath, asciidoctorStylesheetVendorPath)
 
-  console.log(`Demo site generated: ${indexPath}`)
-  console.log(`Preset module generated: ${presetsPath}`)
-  console.log(`Vendor runtime copied: ${asciidoctorVendorPath}`)
-  console.log(`Vendor stylesheet copied: ${asciidoctorStylesheetVendorPath}`)
+    console.log(`Demo site generated: ${indexPath}`)
+    console.log(`Preset module generated: ${presetsPath}`)
+    console.log(`Vendor runtime copied: ${asciidoctorVendorPath}`)
+    console.log(`Vendor stylesheet copied: ${asciidoctorStylesheetVendorPath}`)
+  }
+
+  await writeFormattedDemoAssets()
 }
 
-writeFormattedDemoAssets().catch((error) => {
+main().catch((error) => {
   console.error(error)
   process.exitCode = 1
 })
